@@ -1,0 +1,58 @@
+{
+  "name": "skillbridge-backend",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Backend API for the SkillBridge employability platform.",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/apps/identity-api/src/main.js",
+    "start:identity": "node dist/apps/identity-api/src/main.js",
+    "start:learning": "node dist/apps/learning-api/src/main.js",
+    "start:matching": "node dist/apps/matching-api/src/main.js",
+    "start:marketplace": "node dist/apps/marketplace-api/src/main.js",
+    "start:admin": "node dist/apps/admin-api/src/main.js",
+    "start:pm2": "pm2 start ecosystem.config.js",
+    "dev:identity": "ts-node apps/identity-api/src/main.ts",
+    "dev:learning": "ts-node apps/learning-api/src/main.ts",
+    "dev:matching": "ts-node apps/matching-api/src/main.ts",
+    "dev:marketplace": "ts-node apps/marketplace-api/src/main.ts",
+    "dev:admin": "ts-node apps/admin-api/src/main.ts",
+    "test": "npm run build && node --test test",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:deploy": "prisma migrate deploy",
+    "prisma:seed": "prisma db seed"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
+  },
+  "dependencies": {
+    "@nestjs/common": "^11.1.28",
+    "@nestjs/config": "^4.0.4",
+    "@nestjs/core": "^11.1.28",
+    "@nestjs/platform-express": "^11.1.28",
+    "@nestjs/platform-socket.io": "^11.1.28",
+    "@nestjs/throttler": "^6.5.0",
+    "@nestjs/websockets": "^11.1.28",
+    "@prisma/client": "^6.0.0",
+    "bcryptjs": "^2.4.3",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.14.1",
+    "compression": "^1.8.1",
+    "cookie-parser": "^1.4.7",
+    "helmet": "^8.3.0",
+    "pm2": "^7.0.3",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1",
+    "socket.io": "^4.8.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/compression": "^1.8.1",
+    "@types/cookie-parser": "^1.4.10",
+    "@types/node": "^20.0.0",
+    "prisma": "^6.0.0",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.4.0"
+  }
+}

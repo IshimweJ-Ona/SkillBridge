@@ -1,0 +1,846 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  YOUTH_USER
+  EMPLOYER
+  ADMINISTRATOR
+  ANALYST
+}
+
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+enum Visibility {
+  PUBLIC
+  EMPLOYERS_ONLY
+  PRIVATE
+}
+
+enum FeedbackAudience {
+  YOUTH
+  EMPLOYER
+  PARTNER
+}
+
+enum FeedbackStatus {
+  NEW
+  IN_REVIEW
+  ACTIONED
+  ARCHIVED
+}
+
+enum SubscriptionPlan {
+  FREE
+  YOUTH_PRO
+  EMPLOYER_PARTNER
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIALING
+  PAST_DUE
+  CANCELED
+  EXPIRED
+}
+
+enum CompanyStatus {
+  PENDING_VERIFICATION
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum ChallengeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum ChallengeAudience {
+  UNIVERSITY_GRADUATES
+  ALL_YOUTH
+}
+
+enum ChallengeDifficulty {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+}
+
+enum ChallengeSubmissionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  GRADED
+  REVIEW_REQUIRED
+  EXPIRED
+}
+
+enum BadgeStatus {
+  ISSUED
+  REVOKED
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  FILLED
+  ARCHIVED
+}
+
+enum ApplicationStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  SHORTLISTED
+  REJECTED
+  OFFER_EXTENDED
+  HIRED
+}
+
+enum PricingType {
+  FIXED
+  HOURLY
+}
+
+enum ListingStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum ServiceRequestStatus {
+  NEW
+  IN_DISCUSSION
+  ACCEPTED
+  DECLINED
+  CONTRACTED
+  COMPLETED
+}
+
+enum ContractStatus {
+  DRAFT
+  ACTIVE
+  DELIVERED
+  COMPLETED
+  CANCELED
+  DISPUTED
+}
+
+enum TransactionType {
+  SUBSCRIPTION
+  HIRING_FEE
+  FREELANCE_ESCROW
+  REFUND
+}
+
+enum TransactionStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+  DISPUTED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum NotificationChannel {
+  EMAIL
+  WHATSAPP
+  IN_APP
+}
+
+enum ReportStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum DataExportStatus {
+  REQUESTED
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+enum AuditAction {
+  CREATE
+  UPDATE
+  DELETE
+  ROLE_CHANGE
+  STATUS_CHANGE
+  LOGIN
+  LOGOUT
+  EXPORT
+  PAYMENT
+  SYSTEM
+}
+
+model User {
+  id           Int        @id @default(autoincrement())
+  uuid         String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String?    @unique
+  passwordHash String?
+  firstName    String
+  lastName     String
+  phone        String?    @unique
+  location     String?
+  role         Role       @default(YOUTH_USER)
+  status       UserStatus @default(PENDING_VERIFICATION)
+  failedLoginCount Int    @default(0)
+  lockedUntil  DateTime?
+  lastLoginAt  DateTime?
+  deactivatedAt DateTime?
+  deletionScheduledAt DateTime?
+  consentVersion String?
+  consentAcceptedAt DateTime?
+  onboardingCompletedAt DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  profile               Profile?
+  feedback              Feedback[]
+  subscription          Subscription?
+  ownedCompanies        Company[] @relation("CompanyOwner")
+  verifiedCompanies     Company[] @relation("CompanyVerifier")
+  challengeSubmissions  ChallengeSubmission[]
+  skillBadges           SkillBadge[]
+  endorsementsGiven     PeerEndorsement[] @relation("EndorsementsGiven")
+  jobApplications       JobApplication[]
+  jobMatches            JobMatch[]
+  freelanceListings     FreelanceListing[]
+  serviceRequests       ServiceRequest[] @relation("ServiceRequestClient")
+  freelanceContracts    ServiceContract[] @relation("ContractFreelancer")
+  clientContracts       ServiceContract[] @relation("ContractClient")
+  transactions          Transaction[] @relation("TransactionUser")
+  employerTransactions  Transaction[] @relation("TransactionEmployer")
+  disputesRaised        Dispute[]
+  notifications         Notification[]
+  notificationPreferences NotificationPreference?
+  auditLogs             AuditLog[] @relation("AuditActor")
+  reportExports         ReportExport[]
+  dataExportRequests    DataExportRequest[]
+  identityVerifications IdentityVerification[]
+  passwordResetTokens   PasswordResetToken[]
+  refreshTokens         RefreshToken[]
+  consents              UserConsent[]
+
+  @@index([role, status])
+  @@index([status, deletionScheduledAt])
+  @@index([lockedUntil])
+  @@map("users")
+}
+
+model Profile {
+  id             Int        @id @default(autoincrement())
+  uuid           String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId         Int        @unique
+  headline       String?
+  bio            String?
+  location       String?
+  skills         String[]   @default([])
+  careerInterests String[]  @default([])
+  languages      String[]   @default([])
+  educationLevel String?
+  portfolioUrl   String?
+  cvUrl          String?
+  visibility     Visibility @default(PUBLIC)
+  profileCompleteness Int   @default(0)
+  verifiedBadgeCount Int    @default(0)
+  endorsementCount Int      @default(0)
+  brandScore     Int        @default(0)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  user         User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endorsements PeerEndorsement[]
+
+  @@index([visibility])
+  @@index([visibility, brandScore])
+  @@index([profileCompleteness])
+  @@index([brandScore])
+  @@map("profiles")
+}
+
+model Feedback {
+  id               Int              @id @default(autoincrement())
+  uuid             String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           Int?
+  audience         FeedbackAudience
+  status           FeedbackStatus   @default(NEW)
+  rating           Int?
+  subject          String
+  message          String
+  contactName      String?
+  contactEmail     String?
+  organizationName String?
+  source           String           @default("api")
+  tags             String[]         @default([])
+  internalNotes    String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([audience, status])
+  @@index([status, createdAt])
+  @@index([rating])
+  @@map("feedback")
+}
+
+model Subscription {
+  id                 Int                @id @default(autoincrement())
+  uuid               String             @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             Int                @unique
+  plan               SubscriptionPlan   @default(FREE)
+  status             SubscriptionStatus @default(ACTIVE)
+  priceCents         Int                @default(0)
+  currency           String             @default("USD")
+  currentPeriodStart DateTime           @default(now())
+  currentPeriodEnd   DateTime?
+  cancelAtPeriodEnd  Boolean            @default(false)
+  provider           String             @default("manual")
+  providerCustomerId String?
+  providerReference  String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([plan, status])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Company {
+  id             Int           @id @default(autoincrement())
+  uuid           String        @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  ownerUserId    Int?
+  verifiedByUserId Int?
+  name           String
+  description    String?
+  sector         String?
+  location       String?
+  website        String?
+  logoUrl        String?
+  status         CompanyStatus @default(PENDING_VERIFICATION)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  owner      User? @relation("CompanyOwner", fields: [ownerUserId], references: [id], onDelete: SetNull)
+  verifiedBy User? @relation("CompanyVerifier", fields: [verifiedByUserId], references: [id], onDelete: SetNull)
+  challenges  SkillChallenge[]
+  badges      SkillBadge[]
+  jobPostings JobPosting[]
+
+  @@index([status])
+  @@index([sector])
+  @@map("companies")
+}
+
+model SkillChallenge {
+  id              Int                  @id @default(autoincrement())
+  uuid            String               @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId       Int
+  title           String
+  description     String
+  sector          String
+  skillCategory   String
+  difficulty      ChallengeDifficulty  @default(BEGINNER)
+  audience        ChallengeAudience    @default(ALL_YOUTH)
+  durationMinutes Int                  @default(60)
+  passingScore    Int                  @default(70)
+  status          ChallengeStatus      @default(DRAFT)
+  questions       Json                 @default("[]")
+  resources       Json                 @default("[]")
+  reviewerDueHours Int                 @default(72)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  company       Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  submissions   ChallengeSubmission[]
+  badges        SkillBadge[]
+  jobPreScreens JobPosting[] @relation("JobPreScreen")
+
+  @@index([status, sector])
+  @@index([skillCategory, difficulty])
+  @@map("skill_challenges")
+}
+
+model ChallengeSubmission {
+  id          Int                       @id @default(autoincrement())
+  uuid        String                    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  challengeId Int
+  userId      Int
+  status      ChallengeSubmissionStatus @default(IN_PROGRESS)
+  responseText String?
+  responseUrl  String?
+  responses    Json                     @default("{}")
+  score       Int?
+  feedback    Json                      @default("{}")
+  startedAt   DateTime                  @default(now())
+  expiresAt   DateTime?
+  autoSavedAt DateTime?
+  submittedAt DateTime?
+  gradedAt    DateTime?
+  createdAt   DateTime                  @default(now())
+  updatedAt   DateTime                  @updatedAt
+
+  challenge SkillChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     SkillBadge?
+
+  @@index([challengeId, userId])
+  @@index([status, submittedAt])
+  @@map("challenge_submissions")
+}
+
+model SkillBadge {
+  id           Int         @id @default(autoincrement())
+  uuid         String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       Int
+  challengeId  Int
+  companyId    Int
+  submissionId Int?        @unique
+  name         String
+  skillName    String
+  score        Int
+  status       BadgeStatus @default(ISSUED)
+  verifyUrl    String
+  issuedAt     DateTime    @default(now())
+  revokedAt    DateTime?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user       User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge  SkillChallenge       @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  company    Company              @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  submission ChallengeSubmission? @relation(fields: [submissionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([skillName])
+  @@map("skill_badges")
+}
+
+model PeerEndorsement {
+  id               Int      @id @default(autoincrement())
+  uuid             String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId        Int
+  endorsedByUserId Int
+  skill            String
+  comment          String?
+  weight           Int      @default(1)
+  createdAt        DateTime @default(now())
+
+  profile        Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  endorsedByUser User    @relation("EndorsementsGiven", fields: [endorsedByUserId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, endorsedByUserId, skill])
+  @@index([skill])
+  @@map("peer_endorsements")
+}
+
+model JobPosting {
+  id                   Int               @id @default(autoincrement())
+  uuid                 String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  companyId            Int
+  preScreenChallengeId Int?
+  title                String
+  description          String
+  requiredSkills       String[]          @default([])
+  compensationRange    String?
+  location             String?
+  deadline             DateTime?
+  status               JobStatus         @default(DRAFT)
+  placementConfirmedAt DateTime?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+
+  company            Company          @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  preScreenChallenge SkillChallenge?  @relation("JobPreScreen", fields: [preScreenChallengeId], references: [id], onDelete: SetNull)
+  applications       JobApplication[]
+  matches            JobMatch[]
+  transactions       Transaction[]
+
+  @@index([status, deadline])
+  @@index([companyId])
+  @@map("job_postings")
+}
+
+model JobApplication {
+  id          Int               @id @default(autoincrement())
+  uuid        String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId       Int
+  userId      Int
+  status      ApplicationStatus @default(SUBMITTED)
+  coverLetter String?
+  documentUrl String?
+  matchScore  Int?
+  submittedAt DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+
+  job  JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([status, submittedAt])
+  @@map("job_applications")
+}
+
+model JobMatch {
+  id                Int       @id @default(autoincrement())
+  uuid              String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId             Int
+  userId            Int
+  score             Int
+  badgeScore        Int
+  brandScore        Int
+  subscribed        Boolean   @default(false)
+  notificationDueAt DateTime
+  notifiedAt        DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  job  JobPosting @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  user User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([jobId, userId])
+  @@index([notificationDueAt, notifiedAt])
+  @@index([score])
+  @@map("job_matches")
+}
+
+model FreelanceListing {
+  id            Int           @id @default(autoincrement())
+  uuid          String        @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId        Int
+  title         String
+  description   String
+  category      String
+  pricingType   PricingType   @default(FIXED)
+  priceCents    Int
+  currency      String        @default("RWF")
+  timelineDays  Int
+  portfolioUrls String[]      @default([])
+  status        ListingStatus @default(DRAFT)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  requests  ServiceRequest[]
+  contracts ServiceContract[]
+  reviews   FreelanceReview[]
+
+  @@index([status, category])
+  @@map("freelance_listings")
+}
+
+model ServiceRequest {
+  id           Int                  @id @default(autoincrement())
+  uuid         String               @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId    Int
+  clientUserId Int?
+  contactName  String?
+  contactEmail String?
+  requirements String
+  status       ServiceRequestStatus @default(NEW)
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+
+  listing    FreelanceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  clientUser User?            @relation("ServiceRequestClient", fields: [clientUserId], references: [id], onDelete: SetNull)
+  contract   ServiceContract?
+
+  @@index([status, createdAt])
+  @@map("service_requests")
+}
+
+model ServiceContract {
+  id            Int            @id @default(autoincrement())
+  uuid          String         @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId     Int
+  requestId     Int            @unique
+  freelancerId  Int
+  clientUserId  Int?
+  terms         String
+  deliverables  String
+  timelineDays  Int
+  feeCents      Int
+  currency      String         @default("RWF")
+  status        ContractStatus @default(DRAFT)
+  acceptedAt    DateTime?
+  deliveredAt   DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  listing    FreelanceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  request    ServiceRequest   @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  freelancer User             @relation("ContractFreelancer", fields: [freelancerId], references: [id], onDelete: Cascade)
+  clientUser User?            @relation("ContractClient", fields: [clientUserId], references: [id], onDelete: SetNull)
+  transactions Transaction[]
+  disputes     Dispute[]
+  review       FreelanceReview?
+
+  @@index([status, createdAt])
+  @@map("service_contracts")
+}
+
+model FreelanceReview {
+  id             Int      @id @default(autoincrement())
+  uuid           String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  listingId      Int
+  contractId     Int      @unique
+  reviewerUserId Int?
+  rating         Int
+  comment        String?
+  response       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  listing  FreelanceListing @relation(fields: [listingId], references: [id], onDelete: Cascade)
+  contract ServiceContract  @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([rating])
+  @@map("freelance_reviews")
+}
+
+model Transaction {
+  id                Int               @id @default(autoincrement())
+  uuid              String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            Int?
+  employerId        Int?
+  jobId             Int?
+  contractId        Int?
+  type              TransactionType
+  status            TransactionStatus @default(PENDING)
+  amountCents       Int
+  currency          String            @default("RWF")
+  provider          String            @default("stripe-demo")
+  providerReference String?
+  failureReason     String?
+  metadata          Json              @default("{}")
+  processedAt       DateTime?
+  refundOfTransactionId Int?          @unique
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  user     User?            @relation("TransactionUser", fields: [userId], references: [id], onDelete: SetNull)
+  employer User?            @relation("TransactionEmployer", fields: [employerId], references: [id], onDelete: SetNull)
+  job      JobPosting?      @relation(fields: [jobId], references: [id], onDelete: SetNull)
+  contract ServiceContract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  disputes Dispute[]
+  // Self-relation: a REFUND-type transaction points at the transaction it
+  // reverses via refundOfTransactionId/refundOf; the reversed transaction
+  // can look up its own refund (at most one, enforced by @unique above) via
+  // `refund`.
+  refundOf Transaction?  @relation("TransactionRefund", fields: [refundOfTransactionId], references: [id], onDelete: SetNull)
+  refund   Transaction?  @relation("TransactionRefund")
+
+  @@index([type, status])
+  @@index([createdAt])
+  @@map("transactions")
+}
+
+model Dispute {
+  id             Int               @id @default(autoincrement())
+  uuid           String            @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  transactionId  Int
+  contractId     Int?
+  raisedByUserId Int
+  reason         String
+  status         TransactionStatus @default(DISPUTED)
+  decision       String?
+  resolvedAt     DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  transaction  Transaction      @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  contract     ServiceContract? @relation(fields: [contractId], references: [id], onDelete: SetNull)
+  raisedByUser User             @relation(fields: [raisedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("disputes")
+}
+
+model Notification {
+  id                Int                @id @default(autoincrement())
+  uuid              String             @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            Int?
+  email             String?
+  phone             String?
+  type              String
+  channel           NotificationChannel @default(EMAIL)
+  subject           String
+  body              String
+  status            NotificationStatus @default(PENDING)
+  provider          String             @default("resend")
+  providerMessageId String?
+  error             String?
+  retryCount        Int                @default(0)
+  readAt            DateTime?
+  sentAt            DateTime?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status, createdAt])
+  @@index([userId, readAt, createdAt])
+  @@index([type])
+  @@index([status, retryCount])
+  @@map("notifications")
+}
+
+model NotificationPreference {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId           Int       @unique
+  emailEnabled     Boolean   @default(true)
+  whatsappEnabled  Boolean   @default(false)
+  inAppEnabled     Boolean   @default(true)
+  jobMatchAlerts   Boolean   @default(true)
+  applicationAlerts Boolean  @default(true)
+  badgeAlerts      Boolean   @default(true)
+  contractAlerts   Boolean   @default(true)
+  marketingAlerts  Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notification_preferences")
+}
+
+model AuditLog {
+  id         Int         @id @default(autoincrement())
+  uuid       String      @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  actorUserId Int?
+  action     AuditAction
+  entityType String
+  entityUuid String?
+  details    Json        @default("{}")
+  ipAddress  String?
+  createdAt  DateTime    @default(now())
+
+  actor User? @relation("AuditActor", fields: [actorUserId], references: [id], onDelete: SetNull)
+
+  @@index([action, createdAt])
+  @@index([entityType, entityUuid])
+  @@map("audit_logs")
+}
+
+model ReportExport {
+  id                Int          @id @default(autoincrement())
+  uuid              String       @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  requestedByUserId Int
+  type              String
+  status            ReportStatus @default(QUEUED)
+  filters           Json         @default("{}")
+  fileUrl           String?
+  error             String?
+  createdAt         DateTime     @default(now())
+  completedAt       DateTime?
+
+  requestedBy User @relation(fields: [requestedByUserId], references: [id], onDelete: Cascade)
+
+  @@index([type, status])
+  @@map("report_exports")
+}
+
+model DataExportRequest {
+  id        Int              @id @default(autoincrement())
+  uuid      String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    Int
+  status    DataExportStatus @default(REQUESTED)
+  fileUrl   String?
+  error     String?
+  createdAt DateTime         @default(now())
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, createdAt])
+  @@map("data_export_requests")
+}
+
+model IdentityVerification {
+  id          Int       @id @default(autoincrement())
+  uuid        String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      Int
+  codeHash    String
+  channel     String    @default("email")
+  expiresAt   DateTime
+  verifiedAt  DateTime?
+  createdAt   DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("identity_verifications")
+}
+
+model PasswordResetToken {
+  id        Int       @id @default(autoincrement())
+  uuid      String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    Int
+  tokenHash String
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@map("password_reset_tokens")
+}
+
+model RefreshToken {
+  id                    Int       @id @default(autoincrement())
+  uuid                  String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                Int
+  tokenHash             String    @unique
+  expiresAt             DateTime
+  revokedAt             DateTime?
+  replacedByTokenHash   String?
+  createdAt             DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, expiresAt])
+  @@index([revokedAt, expiresAt])
+  @@map("refresh_tokens")
+}
+
+model UserConsent {
+  id        Int      @id @default(autoincrement())
+  uuid      String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId    Int
+  version   String
+  purpose   String
+  ipAddress String?
+  acceptedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([version, acceptedAt])
+  @@map("user_consents")
+}
