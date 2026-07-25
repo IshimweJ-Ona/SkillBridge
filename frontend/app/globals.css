@@ -1,0 +1,147 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+
+  --sb-bg: #131317;
+  --sb-bg-panel: #1c1c21;
+  --sb-bg-panel-hover: #24242b;
+  --sb-bg-inset: #19191e;
+  --sb-border: #313138;
+  --sb-border-strong: #45454e;
+
+  --sb-text: #f5f5f6;
+  --sb-text-muted: #adadb6;
+  --sb-text-faint: #7c7c86;
+
+  --sb-primary: #e4293f;
+  --sb-primary-hover: #ff3a52;
+  --sb-primary-active: #c01f33;
+  --sb-primary-foreground: #ffffff;
+  --sb-primary-soft: rgba(228, 41, 63, 0.14);
+
+  --sb-success: #22c55e;
+  --sb-success-soft: rgba(34, 197, 94, 0.14);
+  --sb-warning: #eab308;
+  --sb-warning-soft: rgba(234, 179, 8, 0.14);
+  --sb-danger: #ef4444;
+  --sb-danger-soft: rgba(239, 68, 68, 0.14);
+  --sb-info: #3b82f6;
+  --sb-info-soft: rgba(59, 130, 246, 0.14);
+
+  --sb-radius-sm: 0.5rem;
+  --sb-radius-md: 0.75rem;
+  --sb-radius-lg: 1rem;
+  --sb-radius-xl: 1.25rem;
+}
+
+@theme inline {
+  --color-background: var(--sb-bg);
+  --color-foreground: var(--sb-text);
+  --font-sans: var(--font-inter);
+}
+
+* {
+  border-color: var(--sb-border);
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: var(--sb-bg);
+  color: var(--sb-text);
+  font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+::selection {
+  background: var(--sb-primary);
+  color: var(--sb-primary-foreground);
+}
+
+:focus-visible {
+  outline: 2px solid var(--sb-primary);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* thin, dark scrollbars to match the panel aesthetic */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sb-border-strong) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  background-color: var(--sb-border-strong);
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@keyframes sb-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes sb-loader-float {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+    filter: brightness(1);
+  }
+  50% {
+    transform: translateY(-10px) scale(1.045);
+    filter: brightness(1.12);
+  }
+}
+
+.sb-loader-logo {
+  animation: sb-loader-float 3s ease-in-out infinite;
+}
+
+.sb-fade-in {
+  animation: sb-fade-in 180ms ease-out;
+}
+
+/* The app is dark-theme-only on screen, but printing it as-is (e.g. Profile
+   PDF export via window.print()) would waste ink on a near-black background.
+   Flip the palette to a light, ink-friendly one and hide interactive chrome
+   (sidebar, top nav, help button, onboarding overlay, tab switchers, buttons)
+   so only the printed content itself is visible. */
+@media print {
+  :root {
+    --sb-bg: #ffffff;
+    --sb-bg-panel: #ffffff;
+    --sb-bg-panel-hover: #ffffff;
+    --sb-bg-inset: #f4f4f5;
+    --sb-border: #d4d4d8;
+    --sb-border-strong: #a1a1aa;
+
+    --sb-text: #18181b;
+    --sb-text-muted: #3f3f46;
+    --sb-text-faint: #71717a;
+  }
+
+  body {
+    background: #ffffff;
+  }
+
+  .sb-print-hide {
+    display: none !important;
+  }
+}
