@@ -1,0 +1,154 @@
+# Every value below that has a ${VAR:-default} form is meant to be
+# overridden by a root .env file (docker compose auto-loads one next to this
+# file) when deploying somewhere that isn't localhost - see .env.example for
+# the full list and what each one means. Nothing below should need editing
+# in this file itself for a real deployment.
+#
+# Database: DATABASE_URL defaults to the bundled `postgres` service below,
+# but that service only starts if you opt into the "local-db" profile
+# (`docker compose --profile local-db up`). On a real deployment, set
+# DATABASE_URL in the root .env to an external database (e.g. a Neon
+# connection string) instead - the backend services don't have a hard
+# dependency on the local postgres container, so plain `docker compose up`
+# never starts it and just connects out to whatever DATABASE_URL points to.
+name: skillbridge
+
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+    dockerfile: Dockerfile
+  env_file:
+    - ./backend/.env
+  environment: &backend-common-env
+    NODE_ENV: production
+    DATABASE_URL: ${DATABASE_URL:-postgresql://sb_user:sb_password@postgres:5432/SB_DB?schema=public}
+    AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-local-docker-secret-change-before-production-2026}
+    LEARNING_API_PUBLIC_URL: ${LEARNING_API_PUBLIC_URL:-http://localhost:3102/api/v1}
+    APP_BASE_URL: ${APP_BASE_URL:-http://localhost:3000}
+    PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:3000/en/reset-password}
+    CORS_ORIGIN: ${CORS_ORIGIN:-http://localhost:3000}
+  restart: unless-stopped
+
+services:
+  # Opt-in local database for local development/testing only - excluded from
+  # the default profile so a plain `docker compose up` (as run on the real
+  # servers) never starts it. Bring it up explicitly alongside the app:
+  #   docker compose --profile local-db up -d postgres
+  #   docker compose --profile local-db --profile setup run --rm backend-migrate
+  #   docker compose --profile local-db up -d
+  postgres:
+    image: postgres:16-alpine
+    profiles:
+      - local-db
+    environment:
+      POSTGRES_USER: sb_user
+      POSTGRES_PASSWORD: sb_password
+      POSTGRES_DB: SB_DB
+    ports:
+      - "5433:5432"
+    volumes:
+      - skillbridge-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sb_user -d SB_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # One-off migrate+seed job - run by hand against whichever database
+  # DATABASE_URL currently points to (local postgres or Neon), after that
+  # database is confirmed reachable. Not part of `docker compose up`.
+  backend-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: build
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:-postgresql://sb_user:sb_password@postgres:5432/SB_DB?schema=public}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:-local-docker-secret-change-before-production-2026}
+    command: sh -c "npm run prisma:deploy && npm run prisma:seed"
+    profiles:
+      - setup
+
+  identity-api:
+    <<: *backend-common
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: identity-api
+      PORT: 3101
+    command: node dist/apps/identity-api/src/main.js
+    ports:
+      - "3101:3101"
+
+  learning-api:
+    <<: *backend-common
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: learning-api
+      PORT: 3102
+    command: node dist/apps/learning-api/src/main.js
+    ports:
+      - "3102:3102"
+
+  matching-api:
+    <<: *backend-common
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: matching-api
+      PORT: 3103
+    command: node dist/apps/matching-api/src/main.js
+    ports:
+      - "3103:3103"
+
+  marketplace-api:
+    <<: *backend-common
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: marketplace-api
+      PORT: 3104
+    command: node dist/apps/marketplace-api/src/main.js
+    ports:
+      - "3104:3104"
+
+  admin-api:
+    <<: *backend-common
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: admin-api
+      PORT: 3105
+    command: node dist/apps/admin-api/src/main.js
+    ports:
+      - "3105:3105"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # Baked into the client JS bundle at build time (see Dockerfile) -
+        # these must be URLs reachable from the end user's browser, not
+        # Docker-internal service names, since every API call in this app
+        # happens client-side. The defaults match the host-mapped ports
+        # above for local docker compose use; override via root .env for a
+        # real deployment (e.g. public HTTPS hostnames per service).
+        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-false}
+        NEXT_PUBLIC_IDENTITY_API_URL: ${NEXT_PUBLIC_IDENTITY_API_URL:-http://localhost:3101/api/v1}
+        NEXT_PUBLIC_LEARNING_API_URL: ${NEXT_PUBLIC_LEARNING_API_URL:-http://localhost:3102/api/v1}
+        NEXT_PUBLIC_MATCHING_API_URL: ${NEXT_PUBLIC_MATCHING_API_URL:-http://localhost:3103/api/v1}
+        NEXT_PUBLIC_MARKETPLACE_API_URL: ${NEXT_PUBLIC_MARKETPLACE_API_URL:-http://localhost:3104/api/v1}
+        NEXT_PUBLIC_ADMIN_API_URL: ${NEXT_PUBLIC_ADMIN_API_URL:-http://localhost:3105/api/v1}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:-http://localhost:3103}
+    depends_on:
+      - identity-api
+      - learning-api
+      - matching-api
+      - marketplace-api
+      - admin-api
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+volumes:
+  skillbridge-postgres-data:
