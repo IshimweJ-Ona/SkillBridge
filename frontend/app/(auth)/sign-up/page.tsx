@@ -107,6 +107,7 @@ function SignUpForm() {
             placeholder={t("auth.signUp.phoneLabel")}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
+            hint={t("auth.signUp.phoneWhatsappHint")}
           />
         )}
         <Input

@@ -154,7 +154,9 @@ function VerifyOtpForm() {
         </Button>
       </form>
 
-      <p className="mt-4 text-xs text-[var(--sb-text-faint)]">{t("auth.otp.helpText")}</p>
+      <p className="mt-4 text-xs text-[var(--sb-text-faint)]">
+        {phone && !email ? t("auth.otp.helpTextPhone") : t("auth.otp.helpText")}
+      </p>
     </div>
   );
 }
