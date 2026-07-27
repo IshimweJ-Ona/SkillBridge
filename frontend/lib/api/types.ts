@@ -38,6 +38,7 @@ export type NotificationType =
 
 export interface Profile {
   uuid: string;
+  avatarUrl?: string | null;
   headline?: string | null;
   bio?: string | null;
   location?: string | null;
@@ -116,7 +117,7 @@ export interface JobPosting {
   status: JobStatus;
   createdAt: string;
   company: Company;
-  preScreenChallenge?: { uuid: string; title: string } | null;
+  preScreenChallenge?: { uuid: string; title: string; skillCategory?: string; resources?: ChallengeResource[] } | null;
 }
 
 export interface JobMatch {
@@ -292,6 +293,7 @@ export interface AuditLogEntry {
   entityType: string;
   entityUuid?: string | null;
   details: Record<string, unknown>;
+  ipAddress?: string | null;
   createdAt: string;
   actor?: { firstName: string; lastName: string; role: Role } | null;
 }
@@ -339,6 +341,7 @@ export interface AdminUser {
   lastName: string;
   role: Role;
   status: UserStatus;
+  profile?: Profile | null;
   createdAt: string;
 }
 

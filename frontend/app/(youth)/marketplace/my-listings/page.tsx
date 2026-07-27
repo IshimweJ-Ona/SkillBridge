@@ -1,8 +1,9 @@
 "use client";
 
-import { Star, Store } from "lucide-react";
+import { Star } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UndrawAddToCart } from "react-undraw-illustrations";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/link-button";
@@ -36,7 +37,7 @@ export default function MyListingsPage() {
         {items === null && Array.from({ length: 2 }, (_, index) => <Skeleton key={index} className="h-24 w-full" />)}
         {items !== null && items.length === 0 && (
           <EmptyState
-            icon={Store}
+            illustration={UndrawAddToCart}
             title={t("marketplace.noMyListingsTitle")}
             description={t("marketplace.noMyListingsDescription")}
             action={<LinkButton href="/marketplace/my-listings/new" size="sm">{t("marketplace.newListing")}</LinkButton>}

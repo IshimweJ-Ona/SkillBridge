@@ -1,6 +1,6 @@
 "use client";
 
-import { Briefcase, ShieldCheck, TrendingUp } from "lucide-react";
+import { Briefcase, ShieldCheck, TrendingUp } from "@/lib/icons";
 import { Logo, LOGO_SRC } from "@/components/brand/logo";
 import { useTranslations } from "@/lib/i18n/context";
 

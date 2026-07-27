@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { UndrawDocuments } from "react-undraw-illustrations";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -127,7 +127,7 @@ export default function ReportsPage() {
         <CardContent>
           {reports === null && <p className="text-xs text-[var(--sb-text-muted)]">{t("common.loading")}</p>}
           {reports !== null && reports.length === 0 && (
-            <EmptyState icon={FileText} title={t("analyst.reports.noReportsTitle")} description={t("analyst.reports.noReportsDescription")} />
+            <EmptyState illustration={UndrawDocuments} title={t("analyst.reports.noReportsTitle")} description={t("analyst.reports.noReportsDescription")} />
           )}
           {reports !== null && reports.length > 0 && (
             <div className="space-y-2">

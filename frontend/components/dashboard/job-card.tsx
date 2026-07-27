@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, MapPin } from "lucide-react";
+import { Bookmark, MapPin } from "@/lib/icons";
 import Link from "next/link";
 import type { JobPosting } from "@/lib/api";
 import { cn, formatRelativeTime } from "@/lib/utils";

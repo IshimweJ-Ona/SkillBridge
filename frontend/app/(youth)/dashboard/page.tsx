@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Briefcase, Sparkles, TrendingUp } from "lucide-react";
+import { Award, Briefcase, Sparkles, TrendingUp } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { LinkButton } from "@/components/ui/link-button";

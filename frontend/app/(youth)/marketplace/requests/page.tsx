@@ -1,8 +1,8 @@
 "use client";
 
-import { Inbox } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { UndrawInboxCleanup } from "react-undraw-illustrations";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -52,7 +52,7 @@ export default function MarketplaceRequestsPage() {
       <div className="space-y-3">
         {items === null && Array.from({ length: 2 }, (_, index) => <Skeleton key={index} className="h-32 w-full" />)}
         {items !== null && items.length === 0 && (
-          <EmptyState icon={Inbox} title={t("marketplace.noRequestsTitle")} description={t("marketplace.noRequestsDescription")} />
+          <EmptyState illustration={UndrawInboxCleanup} title={t("marketplace.noRequestsTitle")} description={t("marketplace.noRequestsDescription")} />
         )}
         {items !== null &&
           items.map((request) => (

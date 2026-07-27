@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, ExternalLink, Loader2, MapPin } from "lucide-react";
+import { Bookmark, ExternalLink, Loader2, MapPin } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";

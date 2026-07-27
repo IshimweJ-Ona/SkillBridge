@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, Star } from "lucide-react";
+import { Loader2, Star } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -97,7 +97,15 @@ export function ListingDetailClient({ uuid }: { uuid: string }) {
             <StatusPill tone="neutral">{listing.category}</StatusPill>
             <h1 className="mt-2 text-lg font-semibold">{listing.title}</h1>
             <div className="mt-2 flex items-center gap-2">
-              {listing.user && <Avatar firstName={listing.user.firstName} lastName={listing.user.lastName} size={28} />}
+              {listing.user && (
+                <Avatar
+                  firstName={listing.user.firstName}
+                  lastName={listing.user.lastName}
+                  imageUrl={listing.user.profile?.avatarUrl}
+                  size={28}
+                  clickable
+                />
+              )}
               <span className="text-xs text-[var(--sb-text-muted)]">
                 {listing.user ? `${listing.user.firstName} ${listing.user.lastName}` : t("marketplace.freelancerFallback")}
               </span>

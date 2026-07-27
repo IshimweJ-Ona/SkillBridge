@@ -1,6 +1,7 @@
 "use client";
 
-import { MessagesSquare, Star } from "lucide-react";
+import { Star } from "@/lib/icons";
+import { UndrawChatting } from "react-undraw-illustrations";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -96,7 +97,7 @@ export default function FeedbackAnalysisPage() {
         </CardHeader>
         <CardContent>
           {!loading && items.length === 0 && (
-            <EmptyState icon={MessagesSquare} title={t("analyst.feedback.noFeedbackTitle")} description={t("analyst.feedback.noFeedbackDescription")} />
+            <EmptyState illustration={UndrawChatting} title={t("analyst.feedback.noFeedbackTitle")} description={t("analyst.feedback.noFeedbackDescription")} />
           )}
           <div className="space-y-3">
             {items.map((item) => (

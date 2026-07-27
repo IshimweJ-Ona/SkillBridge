@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Loader2, RotateCcw } from "lucide-react";
+import { Check, Loader2, RotateCcw } from "@/lib/icons";
 import { cn } from "@/lib/utils";
 
 export type AutosaveStatus = "idle" | "saving" | "saved" | "error";

@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Briefcase, TrendingUp, Users } from "lucide-react";
+import { Award, Briefcase, TrendingUp, Users } from "@/lib/icons";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";

@@ -1,11 +1,11 @@
 "use client";
 
-import { Award, ExternalLink } from "lucide-react";
+import { Award, ExternalLink } from "@/lib/icons";
 import { useEffect, useState } from "react";
+import { UndrawCelebration, UndrawGraduation } from "react-undraw-illustrations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/link-button";
-import { ProgressBar } from "@/components/ui/progress-bar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/lib/auth-context";
 import { challenges, profiles, type Profile, type SkillBadge } from "@/lib/api";
@@ -46,22 +46,27 @@ export default function SkillsBadgesPage() {
             {loading && <Skeleton className="h-32 w-full" />}
             {!loading && (!profile || profile.skills.length === 0) && (
               <EmptyState
-                icon={Award}
+                illustration={UndrawGraduation}
                 title={t("skillsBadges.noSkillsTitle")}
                 description={t("skillsBadges.noSkillsDescription")}
                 action={<LinkButton href="/profile?tab=skills" size="sm">{t("skillsBadges.addSkills")}</LinkButton>}
               />
             )}
             {!loading &&
+              // Skills are self-declared, listed as-is - tests now run
+              // externally (Google Forms / AutoProctor), so there's no
+              // in-app score to gate display on. A badge (when one exists)
+              // is shown alongside, not required to show the skill at all.
               profile?.skills.map((skill) => {
                 const badge = badges.find((b) => b.skillName === skill);
                 return (
-                  <div key={skill}>
-                    <div className="flex items-center justify-between text-xs">
-                      <span className="text-[var(--sb-text)]">{skill}</span>
-                      <span className="text-[var(--sb-text-muted)]">{badge ? `${badge.score}%` : t("skillsBadges.notVerified")}</span>
-                    </div>
-                    <ProgressBar value={badge?.score ?? 0} className="mt-1.5" />
+                  <div key={skill} className="flex items-center justify-between text-xs">
+                    <span className="text-[var(--sb-text)]">{skill}</span>
+                    {badge && (
+                      <span className="flex items-center gap-1 text-[var(--sb-success)]">
+                        <Award size={12} /> {badge.score}%
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -81,7 +86,7 @@ export default function SkillsBadgesPage() {
             )}
             {!loading && badges.length === 0 && (
               <EmptyState
-                icon={Award}
+                illustration={UndrawCelebration}
                 title={t("skillsBadges.noBadgesTitle")}
                 description={t("skillsBadges.noBadgesDescription")}
                 action={<LinkButton href="/learning-hub" size="sm">{t("skillsBadges.browseChallenges")}</LinkButton>}

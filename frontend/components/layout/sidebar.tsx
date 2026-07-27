@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, X } from "lucide-react";
+import { LogOut, X } from "@/lib/icons";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Logo } from "@/components/brand/logo";

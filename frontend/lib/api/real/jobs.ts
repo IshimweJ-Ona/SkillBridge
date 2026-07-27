@@ -34,9 +34,23 @@ export const jobsApi = {
       deadline?: string;
       status?: JobStatus;
       preScreenChallengeUuid?: string;
+      // Raw employer-submitted Google Form link - stages the job (and its
+      // pre-screen challenge) as DRAFT/hidden until an admin approves it via
+      // approvePreScreen() with the real AutoProctor link.
+      preScreenGoogleFormUrl?: string;
+      // Google Sheet the employer linked their Form's responses to (records
+      // each applicant's email/name/score) - SkillBridge never reads this
+      // automatically, it's for the employer/admin to check manually.
+      responseSheetUrl?: string;
     },
   ) => apiFetch<JobPosting>(base, `/companies/${companyUuid}/jobs`, { method: "POST", body }),
 
   updateApplicationStatus: (uuid: string, status: ApplicationStatus) =>
     apiFetch<JobApplication>(base, `/applications/${uuid}/status`, { method: "PATCH", body: { status } }),
+
+  // Admin-only below.
+  listPendingPreScreen: () => apiFetch<JobPosting[]>(base, "/jobs/pending-pre-screen"),
+
+  approvePreScreen: (uuid: string, autoProctorUrl: string) =>
+    apiFetch<JobPosting>(base, `/jobs/${uuid}/approve-pre-screen`, { method: "PATCH", body: { autoProctorUrl } }),
 };

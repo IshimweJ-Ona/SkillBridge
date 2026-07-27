@@ -1,6 +1,6 @@
 "use client";
 
-import { HelpCircle, X } from "lucide-react";
+import { HelpCircle, X } from "@/lib/icons";
 import { useState } from "react";
 import { useTranslations } from "@/lib/i18n/context";
 import { useOnboarding } from "../onboarding/onboarding-context";

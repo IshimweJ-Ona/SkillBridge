@@ -1,6 +1,7 @@
 "use client";
 
-import { Search, Store } from "lucide-react";
+import { Search } from "@/lib/icons";
+import { UndrawOnlineShopping } from "react-undraw-illustrations";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export default function MarketplacePage() {
         {loading && Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-32 w-full" />)}
         {!loading && items.length === 0 && (
           <div className="sm:col-span-2">
-            <EmptyState icon={Store} title={t("marketplace.noListingsTitle")} description={t("marketplace.noListingsDescription")} />
+            <EmptyState illustration={UndrawOnlineShopping} title={t("marketplace.noListingsTitle")} description={t("marketplace.noListingsDescription")} />
           </div>
         )}
         {!loading &&

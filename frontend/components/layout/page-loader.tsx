@@ -51,11 +51,11 @@ export function PageLoader() {
       aria-hidden="true"
     >
       <div className="sb-loader-logo flex items-center justify-center">
-        {/* sb-neon-ring (see globals.css) draws a bright white arc that
-            spins around the circular badge like a lit neon tube, blurred
-            for glow - independent of the float animation above. */}
+        {/* sb-neon-ring (see globals.css) draws a spinning crimson/gold arc
+            around the circular badge, blurred for glow - independent of the
+            float animation above. */}
         <div className="sb-neon-ring h-24 w-24 sm:h-28 sm:w-28 md:h-36 md:w-36 lg:h-44 lg:w-44 xl:h-52 xl:w-52 2xl:h-64 2xl:w-64">
-          <div className="relative h-full w-full overflow-hidden rounded-full shadow-[0_0_50px_rgba(255,255,255,0.15)] ring-1 ring-white/15">
+          <div className="relative h-full w-full overflow-hidden rounded-full shadow-[0_0_50px_var(--sb-primary-glow)] ring-1 ring-[var(--sb-primary)]/20">
             {/* eslint-disable-next-line @next/next/no-img-element -- next/image's
                 optimizer needs `sharp`, which isn't a dependency here; plain img
                 matches how every other image in this app is rendered. */}

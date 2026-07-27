@@ -34,10 +34,10 @@
   --sb-accent-soft: rgba(230, 165, 60, 0.14);
   --sb-accent-foreground: #1a1206;
 
-  --sb-success: #1f9d57;
-  --sb-success-soft: rgba(31, 157, 87, 0.1);
-  --sb-warning: #a8721f;
-  --sb-warning-soft: rgba(230, 165, 60, 0.14);
+  --sb-success: #2f7a52;
+  --sb-success-soft: rgba(47, 122, 82, 0.1);
+  --sb-warning: #8f6a1f;
+  --sb-warning-soft: rgba(143, 106, 31, 0.12);
   --sb-danger: #d92348;
   --sb-danger-soft: rgba(217, 35, 72, 0.1);
   --sb-info: #2f6fe0;
@@ -168,9 +168,10 @@ body {
   animation: sb-shimmer 1.6s ease-in-out infinite;
 }
 
-/* Neon tube ring for the splash-screen logo: a bright white arc chases
-   around the circular badge, blurred into a soft glow, like a lit neon
-   tube rather than a flat spinner. Pure CSS (conic-gradient masked to a
+/* Loading ring for the splash-screen logo: a bright crimson/gold arc chases
+   around the circular badge, blurred into a soft glow - clearly visible
+   against the light theme (a plain white ring, as this used to be, all but
+   disappears on a white background). Pure CSS (conic-gradient masked to a
    ring) - no extra animation library. */
 @keyframes sb-neon-spin {
   to {
@@ -193,19 +194,19 @@ body {
   background: conic-gradient(
     from 0deg,
     transparent 0%,
-    transparent 78%,
-    rgba(255, 255, 255, 0.55) 90%,
-    #ffffff 97%,
-    #ffffff 100%
+    transparent 70%,
+    var(--sb-accent) 85%,
+    var(--sb-primary) 97%,
+    var(--sb-primary) 100%
   );
   -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
   -webkit-mask-composite: xor;
   mask-composite: exclude;
-  animation: sb-neon-spin 2.4s linear infinite;
+  animation: sb-neon-spin 1.4s linear infinite;
 }
 
 .sb-neon-ring::before {
-  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px #fff);
+  filter: drop-shadow(0 0 2px var(--sb-primary)) drop-shadow(0 0 6px var(--sb-primary-glow));
 }
 
 .sb-neon-ring::after {

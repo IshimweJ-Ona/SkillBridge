@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Loader2 } from "lucide-react";
+import { Building2, Loader2 } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,7 +10,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { LinkButton } from "@/components/ui/link-button";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
-import { ApiError, challenges, companies, jobs, type Company } from "@/lib/api";
+import { ApiError, companies, jobs, type Company } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/context";
 
 export default function NewJobPage() {
@@ -27,10 +27,8 @@ export default function NewJobPage() {
   const [submitting, setSubmitting] = useState(false);
 
   const [hasPreScreen, setHasPreScreen] = useState(false);
-  const [preScreenSkillCategory, setPreScreenSkillCategory] = useState("");
   const [preScreenFormUrl, setPreScreenFormUrl] = useState("");
-  const [preScreenDuration, setPreScreenDuration] = useState("30");
-  const [preScreenPassingScore, setPreScreenPassingScore] = useState("70");
+  const [responseSheetUrl, setResponseSheetUrl] = useState("");
 
   useEffect(() => {
     companies.mine().then((result) => {
@@ -44,36 +42,22 @@ export default function NewJobPage() {
     event.preventDefault();
     setSubmitting(true);
     try {
-      let preScreenChallengeUuid: string | undefined;
-      if (hasPreScreen) {
-        const challenge = await challenges.create(companyUuid, {
-          title: `${title || t("employer.jobs.jobTitle")} - ${t("employer.jobs.preScreenTitle")}`,
-          description: t("employer.jobs.preScreenChallengeDescription"),
-          sector: "Professional Skills",
-          skillCategory: preScreenSkillCategory || title,
-          durationMinutes: Number(preScreenDuration) || 30,
-          passingScore: Number(preScreenPassingScore) || 70,
-          status: "PUBLISHED",
-          resources: [
-            {
-              type: "external_test",
-              label: t("employer.jobs.preScreenOpenTest"),
-              url: preScreenFormUrl,
-            },
-          ],
-        });
-        preScreenChallengeUuid = challenge.uuid;
-      }
-
       await jobs.createJob(companyUuid, {
         title,
         description,
         requiredSkills,
         compensationRange: compensationRange || undefined,
         location: location || undefined,
-        preScreenChallengeUuid,
+        preScreenGoogleFormUrl: hasPreScreen ? preScreenFormUrl : undefined,
+        responseSheetUrl: hasPreScreen ? responseSheetUrl || undefined : undefined,
       });
-      show({ variant: "success", title: t("employer.jobs.postSuccess"), description: t("employer.jobs.postSuccessDescription") });
+      show({
+        variant: "success",
+        title: hasPreScreen ? t("employer.jobs.postPendingReviewTitle") : t("employer.jobs.postSuccess"),
+        description: hasPreScreen
+          ? t("employer.jobs.postPendingReviewDescription")
+          : t("employer.jobs.postSuccessDescription"),
+      });
       router.push("/employer/jobs");
     } catch (err) {
       show({
@@ -199,32 +183,20 @@ export default function NewJobPage() {
               {hasPreScreen && (
                 <div className="mt-4 space-y-3">
                   <Input
-                    label={t("employer.jobs.preScreenSkillLabel")}
-                    placeholder={t("employer.jobs.preScreenSkillPlaceholder")}
-                    value={preScreenSkillCategory}
-                    onChange={(e) => setPreScreenSkillCategory(e.target.value)}
-                  />
-                  <Input
                     label={t("employer.jobs.preScreenFormUrlLabel")}
                     placeholder="https://forms.gle/..."
                     value={preScreenFormUrl}
                     onChange={(e) => setPreScreenFormUrl(e.target.value)}
                     required={hasPreScreen}
+                    hint={t("employer.jobs.preScreenReviewHint")}
                   />
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      type="number"
-                      label={t("employer.jobs.preScreenDurationLabel")}
-                      value={preScreenDuration}
-                      onChange={(e) => setPreScreenDuration(e.target.value)}
-                    />
-                    <Input
-                      type="number"
-                      label={t("employer.jobs.preScreenPassingScoreLabel")}
-                      value={preScreenPassingScore}
-                      onChange={(e) => setPreScreenPassingScore(e.target.value)}
-                    />
-                  </div>
+                  <Input
+                    label={t("employer.jobs.responseSheetLabel")}
+                    placeholder="https://docs.google.com/spreadsheets/..."
+                    value={responseSheetUrl}
+                    onChange={(e) => setResponseSheetUrl(e.target.value)}
+                    hint={t("employer.jobs.responseSheetHint")}
+                  />
                 </div>
               )}
             </div>

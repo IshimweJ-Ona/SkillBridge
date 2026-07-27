@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowLeft, Loader2, MessageSquare, MessageSquarePlus, Send, X } from "lucide-react";
+import { ArrowLeft, Loader2, MessageSquarePlus, Send, X } from "@/lib/icons";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { UndrawMessages, UndrawPeopleSearch } from "react-undraw-illustrations";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -197,7 +198,7 @@ export function MessagesView() {
           {!threadsLoading && threads.length === 0 && (
             <div className="p-4">
               <EmptyState
-                icon={MessageSquare}
+                illustration={UndrawMessages}
                 title={t("messages.emptyInboxTitle")}
                 description={t("messages.emptyInboxDescription")}
               />
@@ -341,7 +342,7 @@ export function MessagesView() {
           {!composerOpen && !activeThread && (
             <div className="hidden h-full items-center justify-center p-8 sm:flex">
               <EmptyState
-                icon={MessageSquare}
+                illustration={UndrawMessages}
                 title={t("messages.selectConversationTitle")}
                 description={t("messages.selectConversationDescription")}
               />
@@ -401,7 +402,7 @@ function NewConversationPanel({
 
         {!loading && contacts.length === 0 && (
           <EmptyState
-            icon={MessageSquarePlus}
+            illustration={UndrawPeopleSearch}
             title={t("messages.noContactsTitle")}
             description={t("messages.noContactsDescription")}
           />

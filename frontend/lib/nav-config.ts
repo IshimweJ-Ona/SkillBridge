@@ -4,6 +4,7 @@ import {
   Bookmark,
   Briefcase,
   Building2,
+  ClipboardList,
   FileText,
   GraduationCap,
   Inbox,
@@ -18,7 +19,7 @@ import {
   Users,
   Wallet,
   type LucideIcon,
-} from "lucide-react";
+} from "@/lib/icons";
 
 export interface NavItem {
   /** Dot-path key into the i18n dictionary, resolved via useTranslations(). */
@@ -75,6 +76,7 @@ export const ADMIN_NAV: NavItem[] = [
   { labelKey: "nav.admin.dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
   { labelKey: "nav.admin.userManagement", href: "/admin/users", icon: Users },
   { labelKey: "nav.admin.companyVerification", href: "/admin/companies", icon: ShieldCheck },
+  { labelKey: "nav.admin.preScreenApprovals", href: "/admin/pre-screen-approvals", icon: ClipboardList },
   { labelKey: "nav.admin.reports", href: "/admin/reports", icon: FileText },
   { labelKey: "nav.admin.auditLog", href: "/admin/audit-log", icon: BarChart3 },
   { labelKey: "nav.admin.settings", href: "/admin/settings", icon: Settings },

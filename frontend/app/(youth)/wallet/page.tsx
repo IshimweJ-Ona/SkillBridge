@@ -1,7 +1,8 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, Wallet as WalletIcon } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Wallet as WalletIcon } from "@/lib/icons";
 import { useEffect, useState } from "react";
+import { UndrawFinance } from "react-undraw-illustrations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -71,7 +72,7 @@ export default function WalletPage() {
         <CardContent>
           {loading && <Skeleton className="h-32 w-full" />}
           {!loading && summary && summary.transactions.length === 0 && (
-            <EmptyState icon={WalletIcon} title={t("wallet.noTransactionsTitle")} description={t("wallet.noTransactionsDescription")} />
+            <EmptyState illustration={UndrawFinance} title={t("wallet.noTransactionsTitle")} description={t("wallet.noTransactionsDescription")} />
           )}
           {!loading && summary && summary.transactions.length > 0 && (
             <div className="space-y-2">

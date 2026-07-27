@@ -1,4 +1,4 @@
-import { Check, Circle } from "lucide-react";
+import { Check, Circle } from "@/lib/icons";
 import type { Profile } from "@/lib/api";
 
 export function profileChecks(profile: Profile) {
@@ -6,7 +6,7 @@ export function profileChecks(profile: Profile) {
     { label: "Basic Information", done: Boolean(profile.headline && profile.bio) },
     { label: "Skills Added", done: profile.skills.length > 0 },
     { label: "Portfolio / CV Added", done: Boolean(profile.portfolioUrl || profile.cvUrl) },
-    { label: "Profile Picture", done: false },
+    { label: "Profile Picture", done: Boolean(profile.avatarUrl) },
     { label: "About You", done: Boolean(profile.bio) },
   ];
 }
@@ -21,8 +21,8 @@ export function ProfileChecklist({ profile }: { profile: Profile }) {
           <span
             className={
               check.done
-                ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--sb-success-soft)] text-[var(--sb-success)]"
-                : "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white/5 text-[var(--sb-text-faint)]"
+                ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--sb-success)] text-white"
+                : "flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-[var(--sb-border-strong)] text-[var(--sb-text-faint)]"
             }
           >
             {check.done ? <Check size={12} /> : <Circle size={10} />}
@@ -31,7 +31,8 @@ export function ProfileChecklist({ profile }: { profile: Profile }) {
             {check.label}
           </span>
           {!check.done && (
-            <span className="ml-auto rounded-full bg-[var(--sb-warning-soft)] px-2 py-0.5 text-[10px] font-medium text-[var(--sb-warning)]">
+            <span className="ml-auto inline-flex items-center gap-1.5 rounded-full bg-[var(--sb-bg-inset)] px-2 py-0.5 text-[10px] font-medium text-[var(--sb-text-muted)] ring-1 ring-inset ring-[var(--sb-border)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--sb-warning)]" />
               In Progress
             </span>
           )}

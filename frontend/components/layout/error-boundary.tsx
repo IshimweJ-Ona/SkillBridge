@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle } from "@/lib/icons";
 import { Component, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 

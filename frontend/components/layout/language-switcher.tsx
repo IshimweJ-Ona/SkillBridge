@@ -1,6 +1,6 @@
 "use client";
 
-import { Globe } from "lucide-react";
+import { Globe } from "@/lib/icons";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { useLanguage, type Locale } from "@/lib/i18n/context";

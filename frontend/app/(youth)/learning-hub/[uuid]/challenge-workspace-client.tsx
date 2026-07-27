@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Clock, ExternalLink, Loader2, Lock } from "lucide-react";
+import { Award, Clock, ExternalLink, Loader2, Lock } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
@@ -28,12 +28,19 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
 
   // Refs so the timer/visibility effects below always see the latest
   // response/submission without re-subscribing their listeners on every
-  // keystroke or re-render.
+  // keystroke or re-render. Synced via effects, not during render, per
+  // react-hooks/refs (mutating ref.current during render is unsafe).
   const responseRef = useRef(response);
-  responseRef.current = response;
   const submissionRef = useRef(submission);
-  submissionRef.current = submission;
   const autoEndedRef = useRef(false);
+
+  useEffect(() => {
+    responseRef.current = response;
+  }, [response]);
+
+  useEffect(() => {
+    submissionRef.current = submission;
+  }, [submission]);
 
   useEffect(() => {
     let active = true;

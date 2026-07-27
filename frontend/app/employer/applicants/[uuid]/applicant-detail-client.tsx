@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, ExternalLink, Loader2, MapPin } from "lucide-react";
+import { Award, ExternalLink, Loader2, MapPin } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -93,7 +93,15 @@ export function ApplicantDetailClient({ uuid }: { uuid: string }) {
       <Card className="p-5">
         <div className="flex items-start justify-between gap-4">
           <div className="flex items-start gap-3">
-            {application.user && <Avatar firstName={application.user.firstName} lastName={application.user.lastName} size={48} />}
+            {application.user && (
+              <Avatar
+                firstName={application.user.firstName}
+                lastName={application.user.lastName}
+                imageUrl={application.user.profile?.avatarUrl}
+                size={48}
+                clickable
+              />
+            )}
             <div>
               <h1 className="text-lg font-semibold">
                 {application.user ? `${application.user.firstName} ${application.user.lastName}` : t("employer.applicants.applicantFallback")}

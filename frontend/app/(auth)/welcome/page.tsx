@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BarChart3, Briefcase, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, BarChart3, Briefcase, ShieldCheck, UserRound } from "@/lib/icons";
 import Link from "next/link";
 import { LOGO_SRC } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";

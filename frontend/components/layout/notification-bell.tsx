@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck } from "@/lib/icons";
 import { useCallback, useEffect, useState } from "react";
 import { notifications, type AppNotification } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/utils";

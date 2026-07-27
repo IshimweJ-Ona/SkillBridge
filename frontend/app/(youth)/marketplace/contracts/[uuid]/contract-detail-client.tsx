@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Loader2, Star } from "lucide-react";
+import { AlertTriangle, Loader2, Star } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";

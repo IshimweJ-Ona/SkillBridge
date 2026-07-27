@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardList } from "lucide-react";
+import { UndrawEmpty } from "react-undraw-illustrations";
 import { useEffect, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -41,7 +41,7 @@ export default function AuditLogPage() {
       <div className="space-y-2">
         {logs === null && Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-14 w-full" />)}
         {logs !== null && logs.length === 0 && (
-          <EmptyState icon={ClipboardList} title={t("analyst.auditLog.noEntriesTitle")} description={t("analyst.auditLog.noEntriesDescription")} />
+          <EmptyState illustration={UndrawEmpty} title={t("analyst.auditLog.noEntriesTitle")} description={t("analyst.auditLog.noEntriesDescription")} />
         )}
         {logs !== null &&
           logs.map((log) => (
@@ -54,7 +54,10 @@ export default function AuditLogPage() {
                     {log.actor &&
                       ` · ${t("analyst.auditLog.byActor", { name: `${log.actor.firstName} ${log.actor.lastName}`, role: log.actor.role })}`}
                   </p>
-                  <p className="text-[10px] text-[var(--sb-text-faint)]">{formatDate(log.createdAt)}</p>
+                  <p className="text-[10px] text-[var(--sb-text-faint)]">
+                    {formatDate(log.createdAt)}
+                    {log.ipAddress && ` · ${log.ipAddress}`}
+                  </p>
                 </div>
               </div>
             </Card>
