@@ -156,6 +156,15 @@ export interface Paginated<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+// A supplementary resource attached to a challenge - currently used to link
+// out to an external test (e.g. a Google Form) that the youth user completes
+// outside the app before submitting their response here.
+export interface ChallengeResource {
+  type: string;
+  label: string;
+  url: string;
+}
+
 export interface SkillChallenge {
   uuid: string;
   title: string;
@@ -167,6 +176,7 @@ export interface SkillChallenge {
   durationMinutes: number;
   passingScore: number;
   status: ChallengeStatus;
+  resources?: ChallengeResource[];
   createdAt: string;
   company?: Company;
 }
@@ -185,9 +195,10 @@ export interface SkillBadge {
 
 export interface ChallengeSubmission {
   uuid: string;
-  status: "IN_PROGRESS" | "SUBMITTED" | "GRADED" | "REVIEW_REQUIRED" | "EXPIRED";
+  status: "IN_PROGRESS" | "SUBMITTED" | "GRADED" | "REVIEW_REQUIRED" | "EXPIRED" | "INTEGRITY_FAILED";
   score?: number | null;
   startedAt: string;
+  lockedUntil?: string | null;
   challenge: SkillChallenge;
 }
 

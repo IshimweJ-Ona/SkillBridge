@@ -1,56 +1,56 @@
 @import "tailwindcss";
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Warm, near-black surfaces (matches the logo's charcoal/ember badge)
-     instead of flat neutral grays - gives the UI a more premium,
-     less "default dark mode" feel. */
-  --sb-bg: #0b0a0d;
-  --sb-bg-panel: #161318;
-  --sb-bg-panel-hover: #1e1a20;
-  --sb-bg-inset: #100e12;
-  --sb-bg-elevated: #201c23;
-  --sb-border: #292430;
-  --sb-border-strong: #3c353f;
+  /* Warm off-white surfaces (echoes the near-black/ember palette this was
+     converted from) instead of flat neutral grays - keeps the same
+     premium feel in a light theme. */
+  --sb-bg: #fbfafb;
+  --sb-bg-panel: #ffffff;
+  --sb-bg-panel-hover: #f6f4f6;
+  --sb-bg-inset: #f4f2f4;
+  --sb-bg-elevated: #ffffff;
+  --sb-border: #e6e2e6;
+  --sb-border-strong: #cfc8cf;
 
-  --sb-text: #f7f5f6;
-  --sb-text-muted: #ad9caa;
-  --sb-text-faint: #766c78;
+  --sb-text: #1c1a1e;
+  --sb-text-muted: #5c5560;
+  --sb-text-faint: #8b8490;
 
-  /* Deeper, richer crimson than the old "candy red" - closer to the
-     ember/blood-red of the badge mark, with a warmer glow. */
+  /* Same crimson brand color as the logo's ember badge - already dark
+     enough to read as text on a light background. */
   --sb-primary: #d81b3d;
-  --sb-primary-hover: #f22e51;
+  --sb-primary-hover: #b8172f;
   --sb-primary-active: #a51230;
   --sb-primary-foreground: #ffffff;
-  --sb-primary-soft: rgba(216, 27, 61, 0.16);
-  --sb-primary-glow: rgba(216, 27, 61, 0.45);
+  --sb-primary-soft: rgba(216, 27, 61, 0.1);
+  --sb-primary-glow: rgba(216, 27, 61, 0.35);
 
-  /* Ember-gold secondary accent, pulled from the logo's flame highlights -
-     used sparingly for badges, scores, and highlight states. */
-  --sb-accent: #e6a53c;
-  --sb-accent-hover: #f4b559;
-  --sb-accent-soft: rgba(230, 165, 60, 0.16);
+  /* Ember-gold secondary accent, deepened from the dark-theme value so it
+     still meets contrast as body text/icons on a light background. */
+  --sb-accent: #a8721f;
+  --sb-accent-hover: #8f5f19;
+  --sb-accent-soft: rgba(230, 165, 60, 0.14);
   --sb-accent-foreground: #1a1206;
 
-  --sb-success: #2fbd6b;
-  --sb-success-soft: rgba(47, 189, 107, 0.14);
-  --sb-warning: #e6a53c;
+  --sb-success: #1f9d57;
+  --sb-success-soft: rgba(31, 157, 87, 0.1);
+  --sb-warning: #a8721f;
   --sb-warning-soft: rgba(230, 165, 60, 0.14);
-  --sb-danger: #f0435f;
-  --sb-danger-soft: rgba(240, 67, 95, 0.14);
-  --sb-info: #4c8dff;
-  --sb-info-soft: rgba(76, 141, 255, 0.14);
+  --sb-danger: #d92348;
+  --sb-danger-soft: rgba(217, 35, 72, 0.1);
+  --sb-info: #2f6fe0;
+  --sb-info-soft: rgba(47, 111, 224, 0.1);
 
   --sb-radius-sm: 0.5rem;
   --sb-radius-md: 0.75rem;
   --sb-radius-lg: 1rem;
   --sb-radius-xl: 1.25rem;
 
-  --sb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --sb-shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
-  --sb-shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
+  --sb-shadow-sm: 0 1px 2px rgba(20, 16, 20, 0.06);
+  --sb-shadow-md: 0 8px 24px -8px rgba(20, 16, 20, 0.12);
+  --sb-shadow-lg: 0 24px 48px -16px rgba(20, 16, 20, 0.16);
 }
 
 @theme inline {
@@ -72,8 +72,8 @@ body {
   /* Subtle ember glow in the upper corners instead of a flat fill - echoes
      the logo's lit background without competing with foreground content. */
   background:
-    radial-gradient(circle at 12% -10%, rgba(216, 27, 61, 0.1), transparent 45%),
-    radial-gradient(circle at 100% 0%, rgba(230, 165, 60, 0.06), transparent 40%),
+    radial-gradient(circle at 12% -10%, rgba(216, 27, 61, 0.05), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(230, 165, 60, 0.04), transparent 40%),
     var(--sb-bg);
   background-attachment: fixed;
   color: var(--sb-text);
@@ -215,25 +215,12 @@ body {
   filter: blur(4px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
 }
 
-/* The app is dark-theme-only on screen, but printing it as-is (e.g. Profile
-   PDF export via window.print()) would waste ink on a near-black background.
-   Flip the palette to a light, ink-friendly one and hide interactive chrome
-   (sidebar, top nav, help button, onboarding overlay, tab switchers, buttons)
-   so only the printed content itself is visible. */
+/* The theme is already light/ink-friendly, so printing (e.g. Profile PDF
+   export via window.print()) just needs a flat white background (no radial
+   glow) and interactive chrome hidden (sidebar, top nav, help button,
+   onboarding overlay, tab switchers, buttons) so only the printed content
+   itself is visible. */
 @media print {
-  :root {
-    --sb-bg: #ffffff;
-    --sb-bg-panel: #ffffff;
-    --sb-bg-panel-hover: #ffffff;
-    --sb-bg-inset: #f4f4f5;
-    --sb-border: #d4d4d8;
-    --sb-border-strong: #a1a1aa;
-
-    --sb-text: #18181b;
-    --sb-text-muted: #3f3f46;
-    --sb-text-faint: #71717a;
-  }
-
   body {
     background: #ffffff;
   }

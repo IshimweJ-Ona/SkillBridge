@@ -1,8 +1,8 @@
 "use client";
 
-import { Award, Clock, Loader2 } from "lucide-react";
+import { Award, Clock, ExternalLink, Loader2, Lock } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -12,6 +12,7 @@ import { useToast } from "@/components/ui/toast";
 import { ApiError, challenges, type ChallengeSubmission, type SkillChallenge } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/context";
 import { useAutosave } from "@/lib/use-autosave";
+import { formatDate } from "@/lib/utils";
 
 export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
   const router = useRouter();
@@ -23,6 +24,16 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
   const [response, setResponse] = useState("");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
+
+  // Refs so the timer/visibility effects below always see the latest
+  // response/submission without re-subscribing their listeners on every
+  // keystroke or re-render.
+  const responseRef = useRef(response);
+  responseRef.current = response;
+  const submissionRef = useRef(submission);
+  submissionRef.current = submission;
+  const autoEndedRef = useRef(false);
 
   useEffect(() => {
     let active = true;
@@ -77,6 +88,68 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
     }
   };
 
+  // Countdown from submission.startedAt + challenge.durationMinutes. Running
+  // out of time auto-submits whatever response exists so far - a fairness
+  // expiry, not a punishment (unlike leaving the tab, below).
+  useEffect(() => {
+    if (!challenge || !submission || submission.status !== "IN_PROGRESS") {
+      setRemainingSeconds(null);
+      return;
+    }
+
+    autoEndedRef.current = false;
+    const deadline = new Date(submission.startedAt).getTime() + challenge.durationMinutes * 60_000;
+
+    const tick = () => {
+      const secondsLeft = Math.max(0, Math.round((deadline - Date.now()) / 1000));
+      setRemainingSeconds(secondsLeft);
+
+      if (secondsLeft <= 0 && !autoEndedRef.current && submissionRef.current?.status === "IN_PROGRESS") {
+        autoEndedRef.current = true;
+        challenges
+          .submit(submissionRef.current.uuid, { responseText: responseRef.current })
+          .then((graded) => setSubmission(graded))
+          .catch(() => undefined);
+      }
+    };
+
+    tick();
+    const interval = window.setInterval(tick, 1000);
+    return () => window.clearInterval(interval);
+  }, [challenge, submission?.uuid, submission?.status, submission?.startedAt]);
+
+  // Anti-cheat: if the tab hosting a timed, IN_PROGRESS test loses focus or
+  // visibility for any reason, immediately fail the attempt server-side and
+  // lock retries on this specific challenge for 7 days. This can't detect
+  // *why* focus was lost (a real tab-switch looks identical to an accidental
+  // alt-tab or a notification popup) - it's a deterrent, not tamper-proof
+  // proctoring.
+  useEffect(() => {
+    if (!submission || submission.status !== "IN_PROGRESS") return;
+
+    const handleVisibilityChange = () => {
+      if (document.hidden && !autoEndedRef.current && submissionRef.current?.status === "IN_PROGRESS") {
+        autoEndedRef.current = true;
+        challenges
+          .failIntegrity(submissionRef.current.uuid)
+          .then((failed) => {
+            setSubmission(failed);
+            show({
+              variant: "error",
+              title: t("learningHub.integrityFailedTitle"),
+              description: t("learningHub.integrityFailedToastDescription"),
+            });
+          })
+          .catch(() => undefined);
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => document.removeEventListener("visibilitychange", handleVisibilityChange);
+  }, [submission?.uuid, submission?.status, show, t]);
+
+  const externalTest = challenge?.resources?.find((resource) => resource.type === "external_test");
+
   if (loading) {
     return (
       <div className="flex flex-1 items-center justify-center py-24">
@@ -120,6 +193,21 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
         </div>
       </Card>
 
+      {externalTest && (
+        <Card className="p-5">
+          <p className="text-sm font-medium">{t("learningHub.externalTestTitle")}</p>
+          <p className="mt-1 text-xs text-[var(--sb-text-muted)]">{t("learningHub.externalTestBody")}</p>
+          <a
+            href={externalTest.url}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex items-center gap-1.5 rounded-[var(--sb-radius-md)] bg-[var(--sb-primary)] px-4 py-2 text-sm font-medium text-[var(--sb-primary-foreground)] hover:bg-[var(--sb-primary-hover)]"
+          >
+            {externalTest.label} <ExternalLink size={14} />
+          </a>
+        </Card>
+      )}
+
       {!submission && (
         <Card className="p-5 text-center">
           <p className="text-sm text-[var(--sb-text-muted)]">{t("learningHub.startHint")}</p>
@@ -133,8 +221,22 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
         <Card className="p-5">
           <div className="mb-2 flex items-center justify-between">
             <p className="text-sm font-medium">{t("learningHub.yourResponse")}</p>
-            <AutosaveIndicator status={autosaveStatus} onRetry={saveNow} />
+            <div className="flex items-center gap-3">
+              {remainingSeconds !== null && (
+                <span
+                  className={`flex items-center gap-1 text-xs font-medium ${
+                    remainingSeconds < 60 ? "text-[var(--sb-danger)]" : "text-[var(--sb-text-faint)]"
+                  }`}
+                >
+                  <Clock size={12} />
+                  {String(Math.floor(remainingSeconds / 60)).padStart(2, "0")}:
+                  {String(remainingSeconds % 60).padStart(2, "0")}
+                </span>
+              )}
+              <AutosaveIndicator status={autosaveStatus} onRetry={saveNow} />
+            </div>
           </div>
+          <p className="mb-3 text-xs text-[var(--sb-text-faint)]">{t("learningHub.integrityWarning")}</p>
           <Textarea
             value={response}
             onChange={(event) => setResponse(event.target.value)}
@@ -169,6 +271,32 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
           )}
           <Button variant="secondary" className="mt-4" onClick={() => router.push("/skills-badges")}>
             {t("learningHub.viewSkillsBadges")}
+          </Button>
+        </Card>
+      )}
+
+      {submission && (submission.status === "INTEGRITY_FAILED" || submission.status === "EXPIRED") && (
+        <Card className="p-6 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[var(--sb-danger-soft)] text-[var(--sb-danger)]">
+            <Lock size={24} />
+          </div>
+          {submission.status === "INTEGRITY_FAILED" ? (
+            <>
+              <p className="mt-3 text-sm font-medium text-[var(--sb-text)]">{t("learningHub.integrityFailedTitle")}</p>
+              <p className="mt-1 text-xs text-[var(--sb-text-muted)]">
+                {submission.lockedUntil
+                  ? t("learningHub.integrityFailedBody", { date: formatDate(submission.lockedUntil) })
+                  : t("learningHub.integrityFailedBodyFallback")}
+              </p>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm font-medium text-[var(--sb-text)]">{t("learningHub.timeExpiredTitle")}</p>
+              <p className="mt-1 text-xs text-[var(--sb-text-muted)]">{t("learningHub.timeExpiredBody")}</p>
+            </>
+          )}
+          <Button variant="secondary" className="mt-4" onClick={() => router.push("/learning-hub")}>
+            {t("learningHub.backToHub")}
           </Button>
         </Card>
       )}

@@ -1,5 +1,6 @@
 import {
   ApiError,
+  type ChallengeResource,
   type ChallengeSubmission,
   type Paginated,
   type SkillBadge,
@@ -55,17 +56,84 @@ export const challengesApiMock = {
     const challenge = db.challenges.find((candidate) => candidate.uuid === uuid);
     if (!challenge) throw new ApiError(`Challenge ${uuid} was not found.`, 404);
 
+    const lock = db.submissions.find(
+      (candidate) =>
+        candidate.challenge.uuid === uuid &&
+        candidate.userUuid === user.uuid &&
+        candidate.lockedUntil &&
+        new Date(candidate.lockedUntil) > new Date(),
+    );
+    if (lock) {
+      throw new ApiError(
+        `You left this test in progress and it was locked. You can retry after ${lock.lockedUntil}.`,
+        403,
+      );
+    }
+
     const submission = {
       uuid: crypto.randomUUID(),
       status: "IN_PROGRESS" as const,
       score: null,
       startedAt: new Date().toISOString(),
+      lockedUntil: null as string | null,
       challenge,
       userUuid: user.uuid,
     };
     db.submissions.unshift(submission);
     saveDb(db);
     return submission;
+  },
+
+  async failIntegrity(submissionUuid: string): Promise<ChallengeSubmission> {
+    await mockLatency(100, 250);
+    const db = getDb();
+    const submission = db.submissions.find((candidate) => candidate.uuid === submissionUuid);
+    if (!submission) throw new ApiError("Submission not found.", 404);
+
+    if (submission.status === "IN_PROGRESS") {
+      submission.status = "INTEGRITY_FAILED";
+      submission.lockedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    }
+
+    saveDb(db);
+    return submission;
+  },
+
+  // Employer-only mock - creates a challenge to attach as a job's pre-screen
+  // test (see app/employer/jobs/new).
+  async create(
+    _companyUuid: string,
+    body: {
+      title: string;
+      description: string;
+      sector: string;
+      skillCategory: string;
+      difficulty?: string;
+      durationMinutes?: number;
+      passingScore?: number;
+      status?: string;
+      resources?: ChallengeResource[];
+    },
+  ): Promise<SkillChallenge> {
+    await mockLatency();
+    const db = getDb();
+    const challenge: SkillChallenge = {
+      uuid: crypto.randomUUID(),
+      title: body.title,
+      description: body.description,
+      sector: body.sector,
+      skillCategory: body.skillCategory,
+      difficulty: (body.difficulty as SkillChallenge["difficulty"]) ?? "BEGINNER",
+      audience: "ALL_YOUTH",
+      durationMinutes: body.durationMinutes ?? 60,
+      passingScore: body.passingScore ?? 70,
+      status: (body.status as SkillChallenge["status"]) ?? "PUBLISHED",
+      resources: body.resources ?? [],
+      createdAt: new Date().toISOString(),
+    };
+    db.challenges.unshift(challenge);
+    saveDb(db);
+    return challenge;
   },
 
   async autosave(

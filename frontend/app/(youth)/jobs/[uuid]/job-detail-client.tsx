@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, Loader2, MapPin } from "lucide-react";
+import { Bookmark, ExternalLink, Loader2, MapPin } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -132,6 +132,19 @@ export function JobDetailClient({ uuid }: { uuid: string }) {
             </StatusPill>
           ))}
         </div>
+
+        {job.preScreenChallenge && (
+          <div className="mt-5 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] p-4">
+            <p className="text-sm font-medium text-[var(--sb-text)]">{t("jobs.preScreenRequiredTitle")}</p>
+            <p className="mt-1 text-xs text-[var(--sb-text-muted)]">{t("jobs.preScreenRequiredBody")}</p>
+            <a
+              href={`/learning-hub/${job.preScreenChallenge.uuid}`}
+              className="mt-3 inline-flex items-center gap-1.5 rounded-[var(--sb-radius-md)] bg-[var(--sb-primary)] px-4 py-2 text-sm font-medium text-[var(--sb-primary-foreground)] hover:bg-[var(--sb-primary-hover)]"
+            >
+              {t("jobs.preScreenTakeTest")} <ExternalLink size={14} />
+            </a>
+          </div>
+        )}
 
         {existingApplication ? (
           <div className="mt-5 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] p-4">

@@ -134,6 +134,7 @@ export const jobsApiMock = {
       location?: string;
       deadline?: string;
       status?: JobStatus;
+      preScreenChallengeUuid?: string;
     },
   ): Promise<JobPosting> {
     await mockLatency();
@@ -148,6 +149,10 @@ export const jobsApiMock = {
       throw new ApiError("Company must be verified before posting jobs.", 400);
     }
 
+    const preScreenChallenge = body.preScreenChallengeUuid
+      ? db.challenges.find((candidate) => candidate.uuid === body.preScreenChallengeUuid)
+      : undefined;
+
     const job: JobPosting = {
       uuid: crypto.randomUUID(),
       title: body.title,
@@ -159,7 +164,7 @@ export const jobsApiMock = {
       status: body.status ?? "OPEN",
       createdAt: new Date().toISOString(),
       company,
-      preScreenChallenge: null,
+      preScreenChallenge: preScreenChallenge ? { uuid: preScreenChallenge.uuid, title: preScreenChallenge.title } : null,
     };
 
     db.jobs.unshift(job);

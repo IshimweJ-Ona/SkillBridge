@@ -33,6 +33,7 @@ export const jobsApi = {
       location?: string;
       deadline?: string;
       status?: JobStatus;
+      preScreenChallengeUuid?: string;
     },
   ) => apiFetch<JobPosting>(base, `/companies/${companyUuid}/jobs`, { method: "POST", body }),
 

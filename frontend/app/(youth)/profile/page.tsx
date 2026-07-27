@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Input, Textarea } from "@/components/ui/input";
+import { LinkButton } from "@/components/ui/link-button";
 import { ScoreGauge } from "@/components/ui/score-gauge";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
@@ -224,6 +225,9 @@ function ProfilePageContent() {
                 placeholder="e.g. React.js"
               />
               <p className="mt-3 text-xs text-[var(--sb-text-faint)]">{t("profile.skillsHint")}</p>
+              <LinkButton href="/skills-badges" variant="secondary" size="sm" className="mt-4">
+                <Award size={14} className="mr-1.5" /> {t("profile.viewSkillsBadges")}
+              </LinkButton>
             </CardContent>
           </Card>
         )}
