@@ -50,6 +50,15 @@ export class ChallengesController {
   }
 
   @Roles(Role.YOUTH_USER, Role.ADMINISTRATOR)
+  @Patch('challenge-submissions/:uuid/fail-integrity')
+  failIntegrity(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @CurrentUser() user: RequestUser,
+  ) {
+    return this.challengesService.failIntegrity(uuid, user.sub);
+  }
+
+  @Roles(Role.YOUTH_USER, Role.ADMINISTRATOR)
   @Post('challenge-submissions/:uuid/submit')
   submitChallenge(
     @Param('uuid', new ParseUUIDPipe()) uuid: string,

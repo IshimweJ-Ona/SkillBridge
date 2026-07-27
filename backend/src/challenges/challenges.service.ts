@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { ChallengeStatus, ChallengeSubmissionStatus, Prisma, SubscriptionStatus } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -99,6 +99,17 @@ export class ChallengesService {
       throw new BadRequestException('This challenge is not published.');
     }
 
+    const lock = await this.prisma.challengeSubmission.findFirst({
+      where: { challengeId: challenge.id, userId: user.id, lockedUntil: { gt: new Date() } },
+      orderBy: { lockedUntil: 'desc' },
+      select: { lockedUntil: true },
+    });
+    if (lock) {
+      throw new ForbiddenException(
+        `You left this test in progress and it was locked. You can retry after ${lock.lockedUntil!.toISOString()}.`,
+      );
+    }
+
     return this.prisma.challengeSubmission.create({
       data: {
         challengeId: challenge.id,
@@ -173,6 +184,29 @@ export class ChallengesService {
     return this.prisma.challengeSubmission.findUnique({
       where: { id: updated.id },
       include: { challenge: { include: { company: true } }, badge: true },
+    });
+  }
+
+  // Called the instant the browser tab hosting a timed, IN_PROGRESS test
+  // loses focus/visibility - see challenge-workspace-client.tsx. Locks this
+  // (user, challenge) pair for 7 days, checked by startChallenge above.
+  async failIntegrity(submissionUuid: string, userUuid: string) {
+    const submission = await this.findOwnedSubmission(submissionUuid, userUuid);
+
+    if (submission.status !== ChallengeSubmissionStatus.IN_PROGRESS) {
+      return submission;
+    }
+
+    const lockedUntil = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+    return this.prisma.challengeSubmission.update({
+      where: { id: submission.id },
+      data: {
+        status: ChallengeSubmissionStatus.INTEGRITY_FAILED,
+        lockedUntil,
+        submittedAt: new Date(),
+      },
+      include: { challenge: true },
     });
   }
 

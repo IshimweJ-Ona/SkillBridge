@@ -84,6 +84,9 @@ enum ChallengeSubmissionStatus {
   GRADED
   REVIEW_REQUIRED
   EXPIRED
+  // Auto-failed for losing tab focus mid-test (see ChallengesService#failIntegrity) - distinct from
+  // EXPIRED (ran out of time fairly) so the UI can explain why this attempt failed.
+  INTEGRITY_FAILED
 }
 
 enum BadgeStatus {
@@ -404,6 +407,10 @@ model ChallengeSubmission {
   autoSavedAt DateTime?
   submittedAt DateTime?
   gradedAt    DateTime?
+  // Set when this attempt is auto-failed for losing tab focus mid-test
+  // (see ChallengesService#failIntegrity). While in the future, startChallenge
+  // refuses to create a new attempt on this same (user, challenge) pair.
+  lockedUntil DateTime?
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
 
