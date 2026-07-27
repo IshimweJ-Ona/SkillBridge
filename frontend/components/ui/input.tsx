@@ -33,7 +33,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             aria-invalid={Boolean(error)}
             aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
             className={cn(
-              "h-10 w-full rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 text-sm text-[var(--sb-text)] placeholder:text-[var(--sb-text-faint)] transition-colors focus:border-[var(--sb-primary)] focus:outline-none",
+              "h-10 w-full rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 text-sm text-[var(--sb-text)] placeholder:text-[var(--sb-text-faint)] transition-all focus:border-[var(--sb-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--sb-primary-soft)]",
               leadingIcon && "pl-9",
               trailing && "pr-9",
               error && "border-[var(--sb-danger)]",
@@ -76,7 +76,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, React.TextareaHTMLAttrib
           id={inputId}
           aria-invalid={Boolean(error)}
           className={cn(
-            "min-h-24 w-full resize-y rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 py-2 text-sm text-[var(--sb-text)] placeholder:text-[var(--sb-text-faint)] transition-colors focus:border-[var(--sb-primary)] focus:outline-none",
+            "min-h-24 w-full resize-y rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 py-2 text-sm text-[var(--sb-text)] placeholder:text-[var(--sb-text-faint)] transition-all focus:border-[var(--sb-primary)] focus:outline-none focus:ring-4 focus:ring-[var(--sb-primary-soft)]",
             error && "border-[var(--sb-danger)]",
             className,
           )}

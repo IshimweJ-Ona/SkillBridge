@@ -399,6 +399,46 @@ export interface ServiceContract {
   review?: FreelanceReview | null;
 }
 
+// Messaging (backend/src/messaging, served by the messaging-api service).
+export interface MessageParticipant {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  companyName?: string | null;
+}
+
+export interface ChatMessage {
+  uuid: string;
+  threadUuid: string;
+  senderUuid: string;
+  body: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface MessageThread {
+  uuid: string;
+  participants: MessageParticipant[];
+  lastMessage: ChatMessage | null;
+  unreadCount: number;
+  updatedAt: string;
+  /** Optional grounding context, e.g. the job this conversation started from. */
+  context?: { jobTitle?: string | null } | null;
+}
+
+// A real person the current user has an actual relationship with (via a job
+// application) and can therefore start a conversation with - never an
+// arbitrary/fabricated contact.
+export interface MessageableContact {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  companyName?: string | null;
+  context: string;
+}
+
 export type CloudinarySignature =
   | { configured: false; message: string }
   | {

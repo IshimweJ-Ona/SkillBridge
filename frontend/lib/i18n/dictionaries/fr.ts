@@ -150,6 +150,7 @@ const fr: Dictionary = {
     backToSignIn: "Retour à la connexion",
   },
   auth: {
+    badge: "SkillBridge EdTech",
     tagline1: "Relier les compétences aux opportunités.",
     tagline2: "Construire l'avenir.",
     feature1Title: "De vraies opportunités",
@@ -235,7 +236,7 @@ const fr: Dictionary = {
     },
   },
   youthDashboard: {
-    greeting: "Bonjour, {name} ! 👋",
+    greeting: "Bonjour, {name} !",
     subtitle: "Prêt à construire votre avenir aujourd'hui ?",
     statApplications: "Candidatures",
     statJobMatches: "Correspondances d'emploi",
@@ -391,8 +392,22 @@ const fr: Dictionary = {
   },
   messages: {
     title: "Messages",
-    demoWarning: "La messagerie est affichée avec des données d'exemple pour cet aperçu - elle n'est pas encore connectée à un backend en direct.",
+    subtitle: "Conversations avec les personnes avec qui vous êtes réellement en contact via vos candidatures",
     typePlaceholder: "Écrire un message...",
+    send: "Envoyer le message",
+    newConversation: "Nouveau message",
+    noMessagesYet: "Aucun message pour l'instant",
+    emptyInboxTitle: "Aucune conversation pour l'instant",
+    emptyInboxDescription: "Une fois connecté(e) via une candidature, vous pourrez démarrer une conversation ici.",
+    selectConversationTitle: "Sélectionnez une conversation",
+    selectConversationDescription: "Choisissez une conversation dans la liste, ou démarrez-en une nouvelle.",
+    chooseRecipient: "À qui souhaitez-vous écrire ?",
+    noContactsTitle: "Personne à contacter pour l'instant",
+    noContactsDescription: "Vous pourrez contacter quelqu'un une fois connecté(e) via une candidature.",
+    firstMessagePlaceholder: "Écrivez votre premier message...",
+    change: "Changer",
+    sendFailedTitle: "Message non envoyé",
+    sendFailedDescription: "Une erreur s'est produite lors de l'envoi de ce message. Veuillez réessayer.",
   },
   marketplace: {
     title: "Place de marché freelance",
@@ -482,7 +497,7 @@ const fr: Dictionary = {
   },
   employer: {
     dashboard: {
-      welcome: "Bienvenue, {name} ! 👋",
+      welcome: "Bienvenue, {name} !",
       subtitle: "Aperçu de vos offres d'emploi et candidats",
       activeJobs: "Emplois actifs",
       totalApplicants: "Total des candidats",

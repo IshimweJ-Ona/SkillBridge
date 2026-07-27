@@ -2,6 +2,7 @@ import type {
   AppNotification,
   AuditLogEntry,
   ChallengeSubmission,
+  ChatMessage,
   Company,
   EarningsSummary,
   Feedback,
@@ -9,6 +10,7 @@ import type {
   JobApplication,
   JobMatch,
   JobPosting,
+  MessageThread,
   Profile,
   ReportExport,
   ServiceContract,
@@ -45,6 +47,10 @@ export interface MockDb {
   listings: (FreelanceListing & { ownerUuid: string })[];
   serviceRequests: (ServiceRequest & { requesterUuid?: string })[];
   contracts: (ServiceContract & { freelancerUuid: string; clientUuid?: string })[];
+  // Messaging starts empty for every account - no seeded/fake conversations.
+  // Threads and messages are only ever created by real user action.
+  messageThreads: MessageThread[];
+  chatMessages: ChatMessage[];
 }
 
 const DEMO_YOUTH_UUID = "10000000-0000-4000-8000-000000000001";
@@ -553,6 +559,8 @@ export function createSeedDb(): MockDb {
     listings: listingsSeed(),
     serviceRequests: [],
     contracts: [],
+    messageThreads: [],
+    chatMessages: [],
   };
 }
 

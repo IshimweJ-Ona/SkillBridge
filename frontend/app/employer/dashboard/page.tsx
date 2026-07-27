@@ -178,14 +178,14 @@ function StatTile({
   value: number | null;
 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 text-[var(--sb-text-faint)]">
-        <Icon size={14} />
-        <span className="text-xs">{label}</span>
+    <Card className="p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--sb-shadow-md)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[0.55rem] bg-[var(--sb-primary-soft)] text-[var(--sb-primary)]">
+        <Icon size={15} />
       </div>
-      <p className="mt-2 text-2xl font-bold text-[var(--sb-text)]">
+      <p className="mt-3 text-2xl font-bold text-[var(--sb-text)]">
         {value === null ? <Skeleton className="h-7 w-10" /> : value}
       </p>
+      <p className="mt-0.5 text-xs text-[var(--sb-text-faint)]">{label}</p>
     </Card>
   );
 }

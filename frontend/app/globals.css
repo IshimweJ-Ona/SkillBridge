@@ -3,36 +3,54 @@
 :root {
   color-scheme: dark;
 
-  --sb-bg: #131317;
-  --sb-bg-panel: #1c1c21;
-  --sb-bg-panel-hover: #24242b;
-  --sb-bg-inset: #19191e;
-  --sb-border: #313138;
-  --sb-border-strong: #45454e;
+  /* Warm, near-black surfaces (matches the logo's charcoal/ember badge)
+     instead of flat neutral grays - gives the UI a more premium,
+     less "default dark mode" feel. */
+  --sb-bg: #0b0a0d;
+  --sb-bg-panel: #161318;
+  --sb-bg-panel-hover: #1e1a20;
+  --sb-bg-inset: #100e12;
+  --sb-bg-elevated: #201c23;
+  --sb-border: #292430;
+  --sb-border-strong: #3c353f;
 
-  --sb-text: #f5f5f6;
-  --sb-text-muted: #adadb6;
-  --sb-text-faint: #7c7c86;
+  --sb-text: #f7f5f6;
+  --sb-text-muted: #ad9caa;
+  --sb-text-faint: #766c78;
 
-  --sb-primary: #e4293f;
-  --sb-primary-hover: #ff3a52;
-  --sb-primary-active: #c01f33;
+  /* Deeper, richer crimson than the old "candy red" - closer to the
+     ember/blood-red of the badge mark, with a warmer glow. */
+  --sb-primary: #d81b3d;
+  --sb-primary-hover: #f22e51;
+  --sb-primary-active: #a51230;
   --sb-primary-foreground: #ffffff;
-  --sb-primary-soft: rgba(228, 41, 63, 0.14);
+  --sb-primary-soft: rgba(216, 27, 61, 0.16);
+  --sb-primary-glow: rgba(216, 27, 61, 0.45);
 
-  --sb-success: #22c55e;
-  --sb-success-soft: rgba(34, 197, 94, 0.14);
-  --sb-warning: #eab308;
-  --sb-warning-soft: rgba(234, 179, 8, 0.14);
-  --sb-danger: #ef4444;
-  --sb-danger-soft: rgba(239, 68, 68, 0.14);
-  --sb-info: #3b82f6;
-  --sb-info-soft: rgba(59, 130, 246, 0.14);
+  /* Ember-gold secondary accent, pulled from the logo's flame highlights -
+     used sparingly for badges, scores, and highlight states. */
+  --sb-accent: #e6a53c;
+  --sb-accent-hover: #f4b559;
+  --sb-accent-soft: rgba(230, 165, 60, 0.16);
+  --sb-accent-foreground: #1a1206;
+
+  --sb-success: #2fbd6b;
+  --sb-success-soft: rgba(47, 189, 107, 0.14);
+  --sb-warning: #e6a53c;
+  --sb-warning-soft: rgba(230, 165, 60, 0.14);
+  --sb-danger: #f0435f;
+  --sb-danger-soft: rgba(240, 67, 95, 0.14);
+  --sb-info: #4c8dff;
+  --sb-info-soft: rgba(76, 141, 255, 0.14);
 
   --sb-radius-sm: 0.5rem;
   --sb-radius-md: 0.75rem;
   --sb-radius-lg: 1rem;
   --sb-radius-xl: 1.25rem;
+
+  --sb-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --sb-shadow-md: 0 8px 24px -8px rgba(0, 0, 0, 0.55);
+  --sb-shadow-lg: 0 24px 48px -16px rgba(0, 0, 0, 0.6);
 }
 
 @theme inline {
@@ -51,7 +69,13 @@ body {
 }
 
 body {
-  background: var(--sb-bg);
+  /* Subtle ember glow in the upper corners instead of a flat fill - echoes
+     the logo's lit background without competing with foreground content. */
+  background:
+    radial-gradient(circle at 12% -10%, rgba(216, 27, 61, 0.1), transparent 45%),
+    radial-gradient(circle at 100% 0%, rgba(230, 165, 60, 0.06), transparent 40%),
+    var(--sb-bg);
+  background-attachment: fixed;
   color: var(--sb-text);
   font-family: var(--font-inter), ui-sans-serif, system-ui, -apple-system, sans-serif;
 }
@@ -116,6 +140,79 @@ body {
 
 .sb-fade-in {
   animation: sb-fade-in 180ms ease-out;
+}
+
+/* Skeleton loading: a soft highlight band sweeps across the block instead
+   of a flat opacity pulse - reads as "actively loading" rather than just
+   "dim", matching the shimmer pattern used across modern dark-UI products. */
+@keyframes sb-shimmer {
+  from {
+    background-position: -150% 0;
+  }
+  to {
+    background-position: 150% 0;
+  }
+}
+
+.sb-skeleton {
+  background-color: var(--sb-bg-panel-hover);
+  background-image: linear-gradient(
+    100deg,
+    transparent 20%,
+    rgba(255, 255, 255, 0.07) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.07) 60%,
+    transparent 80%
+  );
+  background-size: 200% 100%;
+  animation: sb-shimmer 1.6s ease-in-out infinite;
+}
+
+/* Neon tube ring for the splash-screen logo: a bright white arc chases
+   around the circular badge, blurred into a soft glow, like a lit neon
+   tube rather than a flat spinner. Pure CSS (conic-gradient masked to a
+   ring) - no extra animation library. */
+@keyframes sb-neon-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sb-neon-ring {
+  position: relative;
+  border-radius: 9999px;
+}
+
+.sb-neon-ring::before,
+.sb-neon-ring::after {
+  content: "";
+  position: absolute;
+  inset: -6%;
+  border-radius: 9999px;
+  padding: 3px;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0%,
+    transparent 78%,
+    rgba(255, 255, 255, 0.55) 90%,
+    #ffffff 97%,
+    #ffffff 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: sb-neon-spin 2.4s linear infinite;
+}
+
+.sb-neon-ring::before {
+  filter: drop-shadow(0 0 2px #fff) drop-shadow(0 0 6px #fff);
+}
+
+.sb-neon-ring::after {
+  inset: -9%;
+  padding: 6px;
+  opacity: 0.6;
+  filter: blur(4px) drop-shadow(0 0 10px rgba(255, 255, 255, 0.9));
 }
 
 /* The app is dark-theme-only on screen, but printing it as-is (e.g. Profile

@@ -48,8 +48,10 @@ export function DashboardShell({
         <Sidebar items={items} mobileOpen={mobileOpen} onClose={() => setMobileOpen(false)} />
         <div className="flex flex-1 flex-col lg:pl-0">
           <TopNav onMenuClick={() => setMobileOpen(true)} />
-          <main className="sb-fade-in flex-1 p-4 sm:p-6">
-            <ErrorBoundary>{children}</ErrorBoundary>
+          <main className="sb-fade-in flex-1 p-4 sm:p-6 lg:p-8">
+            <div className="mx-auto w-full max-w-[1400px]">
+              <ErrorBoundary>{children}</ErrorBoundary>
+            </div>
           </main>
         </div>
         <HelpButton />

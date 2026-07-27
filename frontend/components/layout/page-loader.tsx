@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { BASE_PATH } from "@/lib/base-path";
 
 const LOADING_PHRASES = [
   "Bridging skills...",
@@ -49,15 +50,22 @@ export function PageLoader() {
       }`}
       aria-hidden="true"
     >
-      <div className="sb-loader-logo h-24 w-24 sm:h-28 sm:w-28 md:h-36 md:w-36 lg:h-44 lg:w-44 xl:h-52 xl:w-52 2xl:h-64 2xl:w-64">
-        {/* eslint-disable-next-line @next/next/no-img-element -- next/image's
-            optimizer needs `sharp`, which isn't a dependency here; plain img
-            matches how every other image in this app is rendered. */}
-        <img
-          src="/SkillBridge_logo.png"
-          alt="SkillBridge"
-          className="h-full w-full object-contain drop-shadow-[0_0_28px_rgba(228,41,63,0.45)]"
-        />
+      <div className="sb-loader-logo flex items-center justify-center">
+        {/* sb-neon-ring (see globals.css) draws a bright white arc that
+            spins around the circular badge like a lit neon tube, blurred
+            for glow - independent of the float animation above. */}
+        <div className="sb-neon-ring h-24 w-24 sm:h-28 sm:w-28 md:h-36 md:w-36 lg:h-44 lg:w-44 xl:h-52 xl:w-52 2xl:h-64 2xl:w-64">
+          <div className="relative h-full w-full overflow-hidden rounded-full shadow-[0_0_50px_rgba(255,255,255,0.15)] ring-1 ring-white/15">
+            {/* eslint-disable-next-line @next/next/no-img-element -- next/image's
+                optimizer needs `sharp`, which isn't a dependency here; plain img
+                matches how every other image in this app is rendered. */}
+            <img
+              src={`${BASE_PATH}/SkillBridge_logo.png`}
+              alt="SkillBridge"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        </div>
       </div>
 
       <div className="mt-8 h-[3px] w-40 overflow-hidden rounded-full bg-[var(--sb-border)] sm:w-48 md:w-56 lg:w-64 xl:w-72 2xl:w-80">

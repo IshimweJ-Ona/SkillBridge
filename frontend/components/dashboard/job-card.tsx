@@ -12,8 +12,8 @@ export function JobCard({ job, matchScore }: { job: JobPosting; matchScore?: num
   const saved = isSaved(job.uuid);
 
   return (
-    <div className="flex items-start gap-3 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-4 transition-colors hover:border-[var(--sb-border-strong)]">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[var(--sb-radius-sm)] bg-white/5 text-xs font-semibold text-[var(--sb-text-muted)]">
+    <div className="group flex items-start gap-3 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-4 shadow-[var(--sb-shadow-sm)] transition-all hover:-translate-y-0.5 hover:border-[var(--sb-primary)]/40 hover:shadow-[var(--sb-shadow-md)]">
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.65rem] bg-[var(--sb-primary-soft)] text-xs font-bold text-[var(--sb-primary)] ring-1 ring-[var(--sb-primary)]/15">
         {job.company.name.slice(0, 2).toUpperCase()}
       </div>
       <div className="min-w-0 flex-1">

@@ -5,6 +5,7 @@ import { AuthProvider } from "@/lib/auth-context";
 import { LanguageProvider } from "@/lib/i18n/context";
 import { ToastProvider } from "@/components/ui/toast";
 import { PageLoader } from "@/components/layout/page-loader";
+import { BASE_PATH } from "@/lib/base-path";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -16,9 +17,9 @@ export const metadata: Metadata = {
   description:
     "Bridging skills to opportunities. Building futures. The SkillBridge youth employability platform.",
   icons: {
-    icon: "/SkillBridge_logo.png",
-    shortcut: "/SkillBridge_logo.png",
-    apple: "/SkillBridge_logo.png",
+    icon: `${BASE_PATH}/SkillBridge_logo.png`,
+    shortcut: `${BASE_PATH}/SkillBridge_logo.png`,
+    apple: `${BASE_PATH}/SkillBridge_logo.png`,
   },
 };
 

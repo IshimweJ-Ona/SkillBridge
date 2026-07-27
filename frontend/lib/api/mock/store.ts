@@ -21,7 +21,12 @@ export function getDb(): MockDb {
   }
 
   try {
-    return JSON.parse(raw) as MockDb;
+    const parsed = JSON.parse(raw) as MockDb;
+    // Backfill fields added after a browser already has a persisted db (e.g.
+    // messaging), so returning users don't crash on `undefined.filter(...)`.
+    parsed.messageThreads ??= [];
+    parsed.chatMessages ??= [];
+    return parsed;
   } catch {
     const seeded = createSeedDb();
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(seeded));

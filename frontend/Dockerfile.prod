@@ -1,3 +1,7 @@
+# Production Dockerfile - deploy counterpart to ./Dockerfile (which stays
+# focused on local `docker-compose.yml` use). Same standalone Next.js
+# build, plus a non-root user, dumb-init as PID 1 for clean shutdowns, and
+# a container HEALTHCHECK.
 FROM node:20-alpine AS deps
 
 WORKDIR /app
@@ -12,8 +16,8 @@ WORKDIR /app
 # NEXT_PUBLIC_* vars are inlined into the client JS bundle at `next build`
 # time - they cannot be changed by setting environment variables on the
 # running container afterward. Pass them as --build-arg at `docker build`
-# time (docker-compose.yml wires these to root .env values, with the
-# existing localhost defaults for local/dev use).
+# time (docker-compose.prod.yml wires these to root .env values - see that
+# file, which requires them to be set rather than defaulting to localhost).
 ARG NEXT_PUBLIC_USE_MOCK_API=false
 ARG NEXT_PUBLIC_IDENTITY_API_URL
 ARG NEXT_PUBLIC_LEARNING_API_URL
@@ -36,6 +40,8 @@ RUN npm run build
 
 FROM node:20-alpine AS runner
 
+RUN apk add --no-cache dumb-init
+
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
@@ -48,6 +54,15 @@ COPY --from=build /app/public ./public
 COPY --from=build /app/.next/standalone ./
 COPY --from=build /app/.next/static ./.next/static
 
+RUN chown -R node:node /app
+USER node
+
 EXPOSE 3000
 
+# basePath (see next.config.ts) means the app only responds under
+# /skillbridge - bare "/" 404s once basePath is set.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD wget --quiet --spider "http://127.0.0.1:3000/skillbridge/" || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
 CMD ["node", "server.js"]

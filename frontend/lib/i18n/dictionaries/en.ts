@@ -149,6 +149,7 @@ const en = {
     backToSignIn: "Back to sign in",
   },
   auth: {
+    badge: "SkillBridge EdTech",
     tagline1: "Bridging skills to opportunities.",
     tagline2: "Building futures.",
     feature1Title: "Real opportunities",
@@ -234,7 +235,7 @@ const en = {
     },
   },
   youthDashboard: {
-    greeting: "Hello, {name}! 👋",
+    greeting: "Hello, {name}!",
     subtitle: "Ready to build your future today?",
     statApplications: "Applications",
     statJobMatches: "Job Matches",
@@ -390,8 +391,22 @@ const en = {
   },
   messages: {
     title: "Messages",
-    demoWarning: "Messaging is shown with sample data for this preview - it isn't connected to a live backend yet.",
+    subtitle: "Conversations with people you're actually connected to through applications",
     typePlaceholder: "Type a message...",
+    send: "Send message",
+    newConversation: "New message",
+    noMessagesYet: "No messages yet",
+    emptyInboxTitle: "No conversations yet",
+    emptyInboxDescription: "Once you're connected through a job application, you can start a conversation here.",
+    selectConversationTitle: "Select a conversation",
+    selectConversationDescription: "Choose a conversation from the list, or start a new one.",
+    chooseRecipient: "Who do you want to message?",
+    noContactsTitle: "No one to message yet",
+    noContactsDescription: "You can message someone once you're connected through a job application.",
+    firstMessagePlaceholder: "Write your first message...",
+    change: "Change",
+    sendFailedTitle: "Message not sent",
+    sendFailedDescription: "Something went wrong sending that message. Please try again.",
   },
   marketplace: {
     title: "Freelance Marketplace",
@@ -481,7 +496,7 @@ const en = {
   },
   employer: {
     dashboard: {
-      welcome: "Welcome, {name}! 👋",
+      welcome: "Welcome, {name}!",
       subtitle: "Overview of your job postings and applicants",
       activeJobs: "Active Jobs",
       totalApplicants: "Total Applicants",
