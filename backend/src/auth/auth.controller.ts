@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Patch, Post, Query, Req, Res } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
+import { ClientIp } from '../common/client-ip.decorator';
 import { CurrentUser, RequestUser } from '../common/current-user.decorator';
 import { Public } from '../common/public.decorator';
 import { AuthService } from './auth.service';
@@ -53,8 +54,9 @@ export class AuthController {
   async login(
     @Body() loginDto: LoginDto,
     @Res({ passthrough: true }) response: CookieResponse,
+    @ClientIp() ip: string,
   ) {
-    const authResponse = await this.authService.login(loginDto);
+    const authResponse = await this.authService.login(loginDto, ip);
     this.setAuthCookies(response, authResponse.accessToken, authResponse.refreshToken);
     return authResponse;
   }
@@ -172,6 +174,7 @@ export class AuthController {
     @Query('state') state: string | undefined,
     @Query('error') error: string | undefined,
     @Res({ passthrough: false }) response: RedirectResponse,
+    @ClientIp() ip: string,
   ) {
     if (error || !code) {
       response.redirect(this.buildFrontendErrorRedirect('oauth_denied'));
@@ -179,7 +182,7 @@ export class AuthController {
     }
 
     try {
-      const authResponse = await this.authService.handleGoogleCallback(code, state);
+      const authResponse = await this.authService.handleGoogleCallback(code, state, ip);
       this.setAuthCookies(response, authResponse.accessToken, authResponse.refreshToken);
       response.redirect(this.buildFrontendRedirect());
     } catch {

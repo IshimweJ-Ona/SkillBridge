@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { ClientIp } from '../common/client-ip.decorator';
 import { CurrentUser, RequestUser } from '../common/current-user.decorator';
 import { Roles } from '../common/roles.decorator';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -24,8 +25,8 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto, @CurrentUser() user: RequestUser) {
-    return this.usersService.create(createUserDto, user.sub);
+  create(@Body() createUserDto: CreateUserDto, @CurrentUser() user: RequestUser, @ClientIp() ip: string) {
+    return this.usersService.create(createUserDto, user.sub, ip);
   }
 
   @Get()
@@ -48,8 +49,9 @@ export class UsersController {
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateUserStatusDto: UpdateUserStatusDto,
     @CurrentUser() user: RequestUser,
+    @ClientIp() ip: string,
   ) {
-    return this.usersService.updateStatus(uuid, updateUserStatusDto.status, user.sub);
+    return this.usersService.updateStatus(uuid, updateUserStatusDto.status, user.sub, ip);
   }
 
   @Patch(':uuid')
@@ -57,12 +59,13 @@ export class UsersController {
     @Param('uuid', new ParseUUIDPipe()) uuid: string,
     @Body() updateUserDto: UpdateUserDto,
     @CurrentUser() user: RequestUser,
+    @ClientIp() ip: string,
   ) {
-    return this.usersService.update(uuid, updateUserDto, user.sub);
+    return this.usersService.update(uuid, updateUserDto, user.sub, ip);
   }
 
   @Delete(':uuid')
-  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string, @CurrentUser() user: RequestUser) {
-    return this.usersService.remove(uuid, user.sub);
+  remove(@Param('uuid', new ParseUUIDPipe()) uuid: string, @CurrentUser() user: RequestUser, @ClientIp() ip: string) {
+    return this.usersService.remove(uuid, user.sub, ip);
   }
 }

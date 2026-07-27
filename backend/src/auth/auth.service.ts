@@ -141,7 +141,7 @@ export class AuthService {
     }
   }
 
-  async login(loginDto: LoginDto) {
+  async login(loginDto: LoginDto, ipAddress?: string) {
     const user = await this.prisma.user.findFirst({
       where: this.identifierWhere(loginDto),
       select: {
@@ -181,7 +181,7 @@ export class AuthService {
     await this.audit(user.id, AuditAction.LOGIN, 'User', user.uuid, {
       method: 'password',
       identifierType: this.identifierType(loginDto),
-    });
+    }, ipAddress);
 
     return this.issueAuthResponse(user);
   }
@@ -509,7 +509,7 @@ export class AuthService {
     return `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
   }
 
-  async handleGoogleCallback(code: string, stateParam?: string) {
+  async handleGoogleCallback(code: string, stateParam?: string, ipAddress?: string) {
     const clientId = process.env.GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
     const redirectUri = process.env.GOOGLE_REDIRECT_URI;
@@ -600,7 +600,7 @@ export class AuthService {
       where: { id: user.id },
       data: { lastLoginAt: new Date() },
     });
-    await this.audit(user.id, AuditAction.LOGIN, 'User', user.uuid, { method: 'google-oauth' });
+    await this.audit(user.id, AuditAction.LOGIN, 'User', user.uuid, { method: 'google-oauth' }, ipAddress);
 
     return this.issueAuthResponse(user);
   }
@@ -922,6 +922,7 @@ export class AuthService {
     entityType: string,
     entityUuid: string,
     details: Prisma.InputJsonValue,
+    ipAddress?: string,
   ) {
     await this.prisma.auditLog.create({
       data: {
@@ -930,6 +931,7 @@ export class AuthService {
         entityType,
         entityUuid,
         details,
+        ipAddress,
       },
     });
   }

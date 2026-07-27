@@ -259,6 +259,7 @@ model Profile {
   id             Int        @id @default(autoincrement())
   uuid           String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         Int        @unique
+  avatarUrl      String?
   headline       String?
   bio            String?
   location       String?

@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, ParseUUIDPipe, Patch, Post, Query } from '@nestjs/common';
 import { Role } from '@prisma/client';
+import { ClientIp } from '../common/client-ip.decorator';
 import { CurrentUser, RequestUser } from '../common/current-user.decorator';
 import { Roles } from '../common/roles.decorator';
 import { AdminService } from './admin.service';
@@ -28,8 +29,9 @@ export class AdminController {
   createReport(
     @CurrentUser() user: RequestUser,
     @Body() body: Record<string, unknown>,
+    @ClientIp() ip: string,
   ) {
-    return this.adminService.createReport(user.sub, body);
+    return this.adminService.createReport(user.sub, body, ip);
   }
 
   @Get('reports')
