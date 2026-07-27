@@ -1,0 +1,171 @@
+# Production deployment stack for SkillBridge - the deploy counterpart to
+# ./docker-compose.yml (which stays as-is for local development). Load this
+# one on the real server instead. Differences from the dev file:
+#
+#   - No bundled Postgres container at all. DATABASE_URL must point at your
+#     real database (e.g. a Neon connection string) via the root .env -
+#     there is no "local-db" fallback here, and the required vars below use
+#     `${VAR:?...}` so `docker compose` refuses to start with a clear error
+#     if you forgot to set one, instead of silently defaulting to a
+#     localhost value that would quietly break in production.
+#
+#   - backend-migrate only runs `prisma migrate deploy` (schema only). It
+#     never runs `prisma db seed` - that script fills the database with
+#     fake demo accounts (see backend/prisma/seed.ts, demoPassword) meant
+#     for local dev only. A deployed database gets its real content from
+#     real user signups, never from seeding.
+#
+#   - backend and frontend images build from Dockerfile.prod (non-root
+#     user, dumb-init for clean shutdowns, container HEALTHCHECK against
+#     each service's own /api/v1/health endpoint) instead of Dockerfile.
+#
+#   - frontend's depends_on waits for each backend service to report
+#     healthy (not just "started"), since HEALTHCHECK is guaranteed to
+#     exist on every backend image built from Dockerfile.prod.
+#
+# Usage - build up one service at a time (see DEPLOYMENT.md):
+#   docker compose -f docker-compose.prod.yml --profile setup run --rm backend-migrate
+#   docker compose -f docker-compose.prod.yml up -d --build identity-api
+#   docker compose -f docker-compose.prod.yml up -d --build learning-api
+#   docker compose -f docker-compose.prod.yml up -d --build matching-api
+#   docker compose -f docker-compose.prod.yml up -d --build marketplace-api
+#   docker compose -f docker-compose.prod.yml up -d --build admin-api
+#   docker compose -f docker-compose.prod.yml up -d --build frontend
+#
+# Root .env (next to this file, copy from .env.example) must set:
+# DATABASE_URL, AUTH_TOKEN_SECRET, APP_BASE_URL, CORS_ORIGIN,
+# PASSWORD_RESET_URL, LEARNING_API_PUBLIC_URL, and every frontend
+# NEXT_PUBLIC_* build arg below (real public URLs, not localhost - the
+# frontend calls these directly from the end user's browser).
+name: skillbridge
+
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+    dockerfile: Dockerfile.prod
+  env_file:
+    - ./backend/.env
+  environment: &backend-common-env
+    NODE_ENV: production
+    DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the root .env to your real database (e.g. Neon)}
+    AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?Set AUTH_TOKEN_SECRET in the root .env (openssl rand -hex 32)}
+    LEARNING_API_PUBLIC_URL: ${LEARNING_API_PUBLIC_URL:?Set LEARNING_API_PUBLIC_URL in the root .env to learning-api's public URL}
+    APP_BASE_URL: ${APP_BASE_URL:?Set APP_BASE_URL in the root .env to the frontend's public URL}
+    PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:?Set PASSWORD_RESET_URL in the root .env}
+    CORS_ORIGIN: ${CORS_ORIGIN:?Set CORS_ORIGIN in the root .env to the frontend's public URL}
+  restart: unless-stopped
+
+services:
+  # One-off migrate job - schema only, never seeds demo data. Run once
+  # before first bringing services up, and again after any deploy that
+  # adds new Prisma migrations.
+  backend-migrate:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.prod
+      target: build
+    env_file:
+      - ./backend/.env
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set DATABASE_URL in the root .env to your real database (e.g. Neon)}
+      AUTH_TOKEN_SECRET: ${AUTH_TOKEN_SECRET:?Set AUTH_TOKEN_SECRET in the root .env (openssl rand -hex 32)}
+    command: sh -c "npm run prisma:deploy"
+    profiles:
+      - setup
+
+  identity-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/identity-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: identity-api
+      PORT: 3101
+    command: node dist/apps/identity-api/src/main.js
+    ports:
+      - "3101:3101"
+
+  learning-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/learning-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: learning-api
+      PORT: 3102
+    command: node dist/apps/learning-api/src/main.js
+    ports:
+      - "3102:3102"
+
+  matching-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/matching-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: matching-api
+      PORT: 3103
+    command: node dist/apps/matching-api/src/main.js
+    ports:
+      - "3103:3103"
+
+  marketplace-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/marketplace-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: marketplace-api
+      PORT: 3104
+    command: node dist/apps/marketplace-api/src/main.js
+    ports:
+      - "3104:3104"
+
+  admin-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/admin-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: admin-api
+      PORT: 3105
+    command: node dist/apps/admin-api/src/main.js
+    ports:
+      - "3105:3105"
+
+  messaging-api:
+    <<: *backend-common
+    image: ${ECR_REGISTRY:-skillbridge}/messaging-api:latest
+    environment:
+      <<: *backend-common-env
+      SKILLBRIDGE_SERVICE: messaging-api
+      PORT: 3106
+    command: node dist/apps/messaging-api/src/main.js
+    ports:
+      - "3106:3106"
+
+  frontend:
+    image: ${ECR_REGISTRY:-skillbridge}/frontend:latest
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_USE_MOCK_API: ${NEXT_PUBLIC_USE_MOCK_API:-false}
+        NEXT_PUBLIC_IDENTITY_API_URL: ${NEXT_PUBLIC_IDENTITY_API_URL:?Set to identity-api's public URL in the root .env}
+        NEXT_PUBLIC_LEARNING_API_URL: ${NEXT_PUBLIC_LEARNING_API_URL:?Set to learning-api's public URL in the root .env}
+        NEXT_PUBLIC_MATCHING_API_URL: ${NEXT_PUBLIC_MATCHING_API_URL:?Set to matching-api's public URL in the root .env}
+        NEXT_PUBLIC_MARKETPLACE_API_URL: ${NEXT_PUBLIC_MARKETPLACE_API_URL:?Set to marketplace-api's public URL in the root .env}
+        NEXT_PUBLIC_ADMIN_API_URL: ${NEXT_PUBLIC_ADMIN_API_URL:?Set to admin-api's public URL in the root .env}
+        NEXT_PUBLIC_MESSAGING_API_URL: ${NEXT_PUBLIC_MESSAGING_API_URL:?Set to messaging-api's public URL in the root .env}
+        NEXT_PUBLIC_WS_URL: ${NEXT_PUBLIC_WS_URL:?Set to matching-api's public URL in the root .env (used for websockets)}
+    depends_on:
+      identity-api:
+        condition: service_healthy
+      learning-api:
+        condition: service_healthy
+      matching-api:
+        condition: service_healthy
+      marketplace-api:
+        condition: service_healthy
+      admin-api:
+        condition: service_healthy
+      messaging-api:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
