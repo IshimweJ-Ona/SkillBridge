@@ -242,6 +242,9 @@ model User {
   passwordResetTokens   PasswordResetToken[]
   refreshTokens         RefreshToken[]
   consents              UserConsent[]
+  conversationsAsOne    Conversation[] @relation("ConversationParticipantOne")
+  conversationsAsTwo    Conversation[] @relation("ConversationParticipantTwo")
+  messagesSent          Message[]
 
   @@index([role, status])
   @@index([status, deletionScheduledAt])
@@ -828,6 +831,47 @@ model RefreshToken {
   @@index([userId, expiresAt])
   @@index([revokedAt, expiresAt])
   @@map("refresh_tokens")
+}
+
+model Conversation {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Always stored with participantOneId < participantTwoId so a pair of
+  // users maps to exactly one conversation regardless of who started it.
+  participantOneId Int
+  participantTwoId Int
+  // Job title the conversation was started from (e.g. an applicant messaging
+  // the employer they applied to) - frozen at creation time for context.
+  contextJobTitle  String?
+  lastMessageAt    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  participantOne User      @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
+  participantTwo User      @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
+  messages       Message[]
+
+  @@unique([participantOneId, participantTwoId])
+  @@index([participantOneId, lastMessageAt])
+  @@index([participantTwoId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             Int       @id @default(autoincrement())
+  uuid           String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId Int
+  senderId       Int
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
 }
 
 model UserConsent {

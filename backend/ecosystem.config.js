@@ -59,5 +59,14 @@ module.exports = {
       },
       ...restartTuning,
     },
+    {
+      name: 'skillbridge-messaging-api',
+      script: 'dist/apps/messaging-api/src/main.js',
+      env: {
+        SKILLBRIDGE_SERVICE: 'messaging-api',
+        PORT: 3106,
+      },
+      ...restartTuning,
+    },
   ],
 };
