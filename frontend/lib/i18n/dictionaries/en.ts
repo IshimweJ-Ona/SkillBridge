@@ -173,12 +173,14 @@ const en = {
       submit: "Sign In",
       noAccount: "Don't have an account?",
       signUp: "Sign up",
-      adminNotice: "Administrator accounts are created by an existing administrator - there's no self-signup. Contact your SkillBridge admin for access.",
-      analystNotice: "Analyst accounts are created by an administrator - there's no self-signup. Contact your SkillBridge admin for access.",
       demoTitle: "Demo mode - try it instantly:",
       genericError: "Something went wrong. Please try again.",
       toastTitle: "Sign in failed",
       toastDescription: "Check your details and try again.",
+    },
+    staffSignIn: {
+      title: "Staff Sign In",
+      subtitle: "For Administrators and Analysts - contact your SkillBridge admin if you need access.",
     },
     signUp: {
       title: "Create Your Account",

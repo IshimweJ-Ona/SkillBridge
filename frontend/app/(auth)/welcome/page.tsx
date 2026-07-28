@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, BarChart3, Briefcase, ShieldCheck, UserRound } from "@/lib/icons";
+import { ArrowRight, Briefcase, UserRound } from "@/lib/icons";
 import Link from "next/link";
 import { LOGO_SRC } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -26,22 +26,10 @@ export default function WelcomePage() {
       href: "/sign-in?role=employer",
       available: true,
     },
-    {
-      key: "analyst",
-      label: t("welcome.analystLabel"),
-      description: t("welcome.analystDescription"),
-      icon: BarChart3,
-      href: "/sign-in?role=analyst",
-      available: true,
-    },
-    {
-      key: "administrator",
-      label: t("welcome.adminLabel"),
-      description: t("welcome.adminDescription"),
-      icon: ShieldCheck,
-      href: "/sign-in?role=admin",
-      available: true,
-    },
+    // Analyst/Administrator are intentionally not offered here - those
+    // accounts are staff-created only (see auth.service.ts#signup, which
+    // rejects self-registration for anything but YOUTH_USER/EMPLOYER) and
+    // sign in at the separate, unlisted /ad_an route instead.
   ];
 
   return (

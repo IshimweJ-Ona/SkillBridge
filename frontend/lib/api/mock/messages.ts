@@ -24,26 +24,29 @@ function buildThreadSummary(db: MockDb, thread: MessageThread, viewerUuid: strin
   };
 }
 
-function participantsFor(db: MockDb, youthUuid: string, employerUuid: string): MessageThread["participants"] {
-  const youth = db.users.find((candidate) => candidate.uuid === youthUuid);
-  const employer = db.users.find((candidate) => candidate.uuid === employerUuid);
-  const employerCompanyUuid = Object.entries(db.companyOwners).find(([, ownerUuid]) => ownerUuid === employerUuid)?.[0];
-  const company = employerCompanyUuid ? db.companies.find((c) => c.uuid === employerCompanyUuid) : undefined;
+// Generic - a thread's two participants no longer have fixed "youth" and
+// "employer" slots, now that youth can also message other youth peers.
+function participantFor(db: MockDb, uuid: string): MessageThread["participants"][number] {
+  const found = db.users.find((candidate) => candidate.uuid === uuid);
+  if (!found) return { uuid, firstName: "Unknown", lastName: "User", role: "YOUTH_USER" as const };
 
-  return [
-    youth
-      ? { uuid: youth.uuid, firstName: youth.firstName, lastName: youth.lastName, role: youth.role }
-      : { uuid: youthUuid, firstName: "Unknown", lastName: "User", role: "YOUTH_USER" as const },
-    employer
-      ? {
-          uuid: employer.uuid,
-          firstName: employer.firstName,
-          lastName: employer.lastName,
-          role: employer.role,
-          companyName: company?.name ?? null,
-        }
-      : { uuid: employerUuid, firstName: "Unknown", lastName: "User", role: "EMPLOYER" as const },
-  ];
+  if (found.role !== "EMPLOYER") {
+    return { uuid: found.uuid, firstName: found.firstName, lastName: found.lastName, role: found.role };
+  }
+
+  const companyUuid = Object.entries(db.companyOwners).find(([, ownerUuid]) => ownerUuid === uuid)?.[0];
+  const company = companyUuid ? db.companies.find((c) => c.uuid === companyUuid) : undefined;
+  return {
+    uuid: found.uuid,
+    firstName: found.firstName,
+    lastName: found.lastName,
+    role: found.role,
+    companyName: company?.name ?? null,
+  };
+}
+
+function participantsFor(db: MockDb, uuidA: string, uuidB: string): MessageThread["participants"] {
+  return [participantFor(db, uuidA), participantFor(db, uuidB)];
 }
 
 export const messagesApiMock = {
@@ -109,7 +112,7 @@ export const messagesApiMock = {
     const contacts = await computeContacts(db, user.uuid, user.role);
     const contact = contacts.find((c) => c.uuid === recipientUuid);
     if (!contact) {
-      throw new ApiError("You can only message someone you have an active application with.", 403);
+      throw new ApiError("You are not able to message this person.", 403);
     }
 
     const existing = db.messageThreads.find(
@@ -118,17 +121,19 @@ export const messagesApiMock = {
         thread.participants.some((p) => p.uuid === recipientUuid),
     );
 
-    const youthUuid = user.role === "EMPLOYER" ? recipientUuid : user.uuid;
-    const employerUuid = user.role === "EMPLOYER" ? user.uuid : recipientUuid;
+    // Only a real job-application contact has an actual job title to store -
+    // a peer contact's context ("Fellow youth on SkillBridge") isn't one.
+    const jobTitleMatch = /^Applied to (.+)$/.exec(contact.context);
+    const jobTitle = jobTitleMatch?.[1];
 
     const thread: MessageThread =
       existing ?? {
         uuid: crypto.randomUUID(),
-        participants: participantsFor(db, youthUuid, employerUuid),
+        participants: participantsFor(db, user.uuid, recipientUuid),
         lastMessage: null,
         unreadCount: 0,
         updatedAt: new Date().toISOString(),
-        context: { jobTitle: contact.context },
+        context: jobTitle ? { jobTitle } : null,
       };
 
     if (!existing) db.messageThreads.push(thread);
@@ -192,6 +197,24 @@ async function computeContacts(db: MockDb, userUuid: string, role: string): Prom
         role: employer.role,
         companyName: application.job.company.name,
         context: `Applied to ${application.job.title}`,
+      });
+    }
+
+    // Peer networking: other youth who've opted into PUBLIC profile
+    // visibility (EMPLOYERS_ONLY/PRIVATE means "don't surface me to fellow
+    // youth") - mirrors messaging.service.ts#computeContacts on the backend.
+    for (const candidate of db.users) {
+      if (candidate.uuid === userUuid) continue;
+      if (candidate.role !== "YOUTH_USER" || candidate.status !== "ACTIVE") continue;
+      if (candidate.profile?.visibility !== "PUBLIC") continue;
+      if (byUuid.has(candidate.uuid)) continue;
+      byUuid.set(candidate.uuid, {
+        uuid: candidate.uuid,
+        firstName: candidate.firstName,
+        lastName: candidate.lastName,
+        role: candidate.role,
+        companyName: null,
+        context: "Fellow youth on SkillBridge",
       });
     }
   } else if (role === "EMPLOYER") {
