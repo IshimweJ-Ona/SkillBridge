@@ -248,6 +248,8 @@ model User {
   conversationsAsOne    Conversation[] @relation("ConversationParticipantOne")
   conversationsAsTwo    Conversation[] @relation("ConversationParticipantTwo")
   messagesSent          Message[]
+  connectionsMade       Connection[] @relation("ConnectionsMade")
+  connectionsReceived   Connection[] @relation("ConnectionsReceived")
 
   @@index([role, status])
   @@index([status, deletionScheduledAt])
@@ -880,6 +882,24 @@ model Message {
   @@index([conversationId, createdAt])
   @@index([senderId])
   @@map("messages")
+}
+
+// A youth user saving a fellow youth peer as a connection ("friend"). One
+// row per direction - saving someone doesn't require them to accept, it's a
+// personal contacts list, not a mutual request/accept relationship.
+model Connection {
+  id              Int      @id @default(autoincrement())
+  uuid            String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          Int
+  connectedUserId Int
+  createdAt       DateTime @default(now())
+
+  user          User @relation("ConnectionsMade", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User @relation("ConnectionsReceived", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+  @@index([connectedUserId])
+  @@map("connections")
 }
 
 model UserConsent {
