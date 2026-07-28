@@ -28,7 +28,16 @@ function SignInForm() {
   const { show } = useToast();
   const t = useTranslations();
 
-  const [role, setRole] = useState<AuthRole>(searchParams.get("role") === "employer" ? "EMPLOYER" : "YOUTH_USER");
+  // Analyst/Administrator accounts can never self-register (auth.service.ts
+  // blocks signup for anything but YOUTH_USER/EMPLOYER - only an existing
+  // admin can create one, via POST /users). This page's actual login logic
+  // works identically for every role regardless of the tab selected below -
+  // this flag only controls which chrome to show, so staff roles don't see
+  // a Youth/Employer toggle or a "Sign up" link that's simply wrong for them.
+  const roleParam = searchParams.get("role");
+  const isStaffRole = roleParam === "analyst" || roleParam === "admin";
+
+  const [role, setRole] = useState<AuthRole>(roleParam === "employer" ? "EMPLOYER" : "YOUTH_USER");
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -59,11 +68,18 @@ function SignInForm() {
       <h2 className="text-lg font-semibold">{t("auth.signIn.title")}</h2>
       <p className="mt-1 text-sm text-[var(--sb-text-muted)]">{t("auth.signIn.subtitle")}</p>
 
-      <div className="mt-5">
-        <RoleTabs value={role} onChange={setRole} />
-      </div>
+      {!isStaffRole && (
+        <div className="mt-5">
+          <RoleTabs value={role} onChange={setRole} />
+        </div>
+      )}
+      {isStaffRole && (
+        <p className="mt-5 rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 py-2 text-xs text-[var(--sb-text-muted)]">
+          {roleParam === "admin" ? t("auth.signIn.adminNotice") : t("auth.signIn.analystNotice")}
+        </p>
+      )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="mt-4 space-y-4">
         <Input
           label={t("auth.signIn.identifierLabel")}
           placeholder={t("auth.signIn.identifierPlaceholder")}
@@ -114,12 +130,14 @@ function SignInForm() {
 
       <OAuthButtons />
 
-      <p className="mt-6 text-center text-xs text-[var(--sb-text-muted)]">
-        {t("auth.signIn.noAccount")}{" "}
-        <Link href={`/sign-up?role=${role === "EMPLOYER" ? "employer" : "youth"}`} className="font-medium text-[var(--sb-primary)] hover:underline">
-          {t("auth.signIn.signUp")}
-        </Link>
-      </p>
+      {!isStaffRole && (
+        <p className="mt-6 text-center text-xs text-[var(--sb-text-muted)]">
+          {t("auth.signIn.noAccount")}{" "}
+          <Link href={`/sign-up?role=${role === "EMPLOYER" ? "employer" : "youth"}`} className="font-medium text-[var(--sb-primary)] hover:underline">
+            {t("auth.signIn.signUp")}
+          </Link>
+        </p>
+      )}
     </div>
   );
 }

@@ -31,7 +31,7 @@ export default function WelcomePage() {
       label: t("welcome.analystLabel"),
       description: t("welcome.analystDescription"),
       icon: BarChart3,
-      href: "/sign-in",
+      href: "/sign-in?role=analyst",
       available: true,
     },
     {
@@ -39,7 +39,7 @@ export default function WelcomePage() {
       label: t("welcome.adminLabel"),
       description: t("welcome.adminDescription"),
       icon: ShieldCheck,
-      href: "/sign-in",
+      href: "/sign-in?role=admin",
       available: true,
     },
   ];

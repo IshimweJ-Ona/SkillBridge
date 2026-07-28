@@ -174,6 +174,8 @@ const fr: Dictionary = {
       submit: "Se connecter",
       noAccount: "Vous n'avez pas de compte ?",
       signUp: "S'inscrire",
+      adminNotice: "Les comptes administrateur sont créés par un administrateur existant - il n'y a pas d'inscription libre. Contactez votre administrateur SkillBridge pour obtenir un accès.",
+      analystNotice: "Les comptes analyste sont créés par un administrateur - il n'y a pas d'inscription libre. Contactez votre administrateur SkillBridge pour obtenir un accès.",
       demoTitle: "Mode démo - essayez instantanément :",
       genericError: "Une erreur s'est produite. Veuillez réessayer.",
       toastTitle: "Échec de la connexion",
