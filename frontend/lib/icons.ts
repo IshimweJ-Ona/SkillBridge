@@ -59,6 +59,9 @@ export {
   Stars01 as Sparkles,
   Settings01 as Settings,
   ShoppingBag01 as Store,
+  UserPlus01 as UserPlus,
+  UserCheck01 as UserCheck,
+  UsersPlus,
 } from "@untitledui/icons";
 
 import type { FC, SVGProps } from "react";

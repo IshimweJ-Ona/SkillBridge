@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowLeft, Loader2, MessageSquarePlus, Send, X } from "@/lib/icons";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowLeft, Loader2, MessageSquarePlus, Search, Send, X } from "@/lib/icons";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { UndrawMessages, UndrawPeopleSearch } from "react-undraw-illustrations";
 import { Avatar } from "@/components/ui/avatar";
 import { EmptyState } from "@/components/ui/empty-state";
+import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/toast";
 import { messages as messagesApi, type ChatMessage, type MessageableContact, type MessageThread } from "@/lib/api";
@@ -33,9 +35,23 @@ function counterpartLabel(contact: { firstName: string; lastName: string; compan
  * lib/api/real/messages.ts. See lib/api/types.ts for the shared contract.
  */
 export function MessagesView() {
+  return (
+    <Suspense>
+      <MessagesViewInner />
+    </Suspense>
+  );
+}
+
+function MessagesViewInner() {
   const { user } = useAuth();
   const t = useTranslations();
   const { show } = useToast();
+  const searchParams = useSearchParams();
+  // Coming from the Connect directory's "Message" button (/messages?to=uuid) -
+  // opens the composer with that person preselected once their contact
+  // record loads.
+  const prefillRecipientUuid = searchParams.get("to");
+  const appliedPrefillRef = useRef(false);
 
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [threadsLoading, setThreadsLoading] = useState(true);
@@ -51,6 +67,7 @@ export function MessagesView() {
   const [composerOpen, setComposerOpen] = useState(false);
   const [contacts, setContacts] = useState<MessageableContact[]>([]);
   const [contactsLoading, setContactsLoading] = useState(false);
+  const [contactSearch, setContactSearch] = useState("");
   const [composerRecipient, setComposerRecipient] = useState<MessageableContact | null>(null);
   const [composerDraft, setComposerDraft] = useState("");
   const [composerSending, setComposerSending] = useState(false);
@@ -139,6 +156,25 @@ export function MessagesView() {
       setContactsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (!prefillRecipientUuid || appliedPrefillRef.current) return;
+    appliedPrefillRef.current = true;
+    openComposer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillRecipientUuid]);
+
+  useEffect(() => {
+    if (!prefillRecipientUuid || composerRecipient) return;
+    const match = contacts.find((contact) => contact.uuid === prefillRecipientUuid);
+    if (match) setComposerRecipient(match);
+  }, [contacts, prefillRecipientUuid, composerRecipient]);
+
+  const filteredContacts = contactSearch.trim()
+    ? contacts.filter((contact) =>
+        `${contact.firstName} ${contact.lastName}`.toLowerCase().includes(contactSearch.trim().toLowerCase()),
+      )
+    : contacts;
 
   const handleStartThread = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -255,14 +291,18 @@ export function MessagesView() {
         <div className={cn("flex-col bg-[var(--sb-bg-inset)] sm:flex", showRightPane ? "flex" : "hidden")}>
           {composerOpen && (
             <NewConversationPanel
-              contacts={contacts}
+              contacts={filteredContacts}
+              totalContacts={contacts.length}
               loading={contactsLoading}
               recipient={composerRecipient}
               draft={composerDraft}
               sending={composerSending}
+              search={contactSearch}
+              onSearchChange={setContactSearch}
               onBack={() => {
                 setComposerOpen(false);
                 setMobileView("list");
+                setContactSearch("");
               }}
               onSelectRecipient={setComposerRecipient}
               onDraftChange={setComposerDraft}
@@ -356,10 +396,13 @@ export function MessagesView() {
 
 function NewConversationPanel({
   contacts,
+  totalContacts,
   loading,
   recipient,
   draft,
   sending,
+  search,
+  onSearchChange,
   onBack,
   onSelectRecipient,
   onDraftChange,
@@ -367,10 +410,13 @@ function NewConversationPanel({
   t,
 }: {
   contacts: MessageableContact[];
+  totalContacts: number;
   loading: boolean;
   recipient: MessageableContact | null;
   draft: string;
   sending: boolean;
+  search: string;
+  onSearchChange: (value: string) => void;
   onBack: () => void;
   onSelectRecipient: (contact: MessageableContact | null) => void;
   onDraftChange: (value: string) => void;
@@ -400,7 +446,7 @@ function NewConversationPanel({
           </div>
         )}
 
-        {!loading && contacts.length === 0 && (
+        {!loading && totalContacts === 0 && (
           <EmptyState
             illustration={UndrawPeopleSearch}
             title={t("messages.noContactsTitle")}
@@ -408,11 +454,20 @@ function NewConversationPanel({
           />
         )}
 
-        {!loading && contacts.length > 0 && !recipient && (
-          <div className="space-y-1.5">
-            <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-[var(--sb-text-faint)]">
+        {!loading && totalContacts > 0 && !recipient && (
+          <div className="space-y-3">
+            <Input
+              leadingIcon={<Search size={15} />}
+              placeholder={t("messages.searchContactsPlaceholder")}
+              value={search}
+              onChange={(event) => onSearchChange(event.target.value)}
+            />
+            <p className="text-[11px] font-medium uppercase tracking-wide text-[var(--sb-text-faint)]">
               {t("messages.chooseRecipient")}
             </p>
+            {contacts.length === 0 && (
+              <p className="py-4 text-center text-xs text-[var(--sb-text-muted)]">{t("messages.noContactsMatch")}</p>
+            )}
             {contacts.map((contact) => (
               <button
                 key={contact.uuid}

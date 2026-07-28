@@ -17,6 +17,7 @@ import {
   Store,
   UserRound,
   Users,
+  UsersPlus,
   Wallet,
   type LucideIcon,
 } from "@/lib/icons";
@@ -47,6 +48,7 @@ export const YOUTH_NAV: NavItem[] = [
   { labelKey: "nav.youth.myApplications", href: "/applications", icon: Briefcase },
   { labelKey: "nav.youth.savedJobs", href: "/saved-jobs", icon: Bookmark },
   { labelKey: "nav.youth.messages", href: "/messages", icon: MessageSquare },
+  { labelKey: "nav.youth.connect", href: "/connect", icon: UsersPlus },
   { labelKey: "nav.youth.profile", href: "/profile", icon: UserRound },
   { labelKey: "nav.youth.skillsBadges", href: "/skills-badges", icon: Award },
   { labelKey: "nav.youth.learningHub", href: "/learning-hub", icon: GraduationCap },

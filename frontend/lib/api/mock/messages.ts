@@ -1,5 +1,5 @@
 import { ApiError, type ChatMessage, type MessageableContact, type MessageThread } from "../types";
-import { requireSession } from "./helpers";
+import { publicYouthPeers, requireSession } from "./helpers";
 import { getDb, mockLatency, saveDb } from "./store";
 import type { MockDb } from "./fixtures";
 
@@ -203,10 +203,7 @@ async function computeContacts(db: MockDb, userUuid: string, role: string): Prom
     // Peer networking: other youth who've opted into PUBLIC profile
     // visibility (EMPLOYERS_ONLY/PRIVATE means "don't surface me to fellow
     // youth") - mirrors messaging.service.ts#computeContacts on the backend.
-    for (const candidate of db.users) {
-      if (candidate.uuid === userUuid) continue;
-      if (candidate.role !== "YOUTH_USER" || candidate.status !== "ACTIVE") continue;
-      if (candidate.profile?.visibility !== "PUBLIC") continue;
+    for (const candidate of publicYouthPeers(db, userUuid)) {
       if (byUuid.has(candidate.uuid)) continue;
       byUuid.set(candidate.uuid, {
         uuid: candidate.uuid,

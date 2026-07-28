@@ -453,6 +453,23 @@ export interface MessageableContact {
   context: string;
 }
 
+// Connect directory (backend/src/connections, served by identity-api) - the
+// fellow-youth network: browse/search PUBLIC-visibility youth profiles, save
+// one as a connection, or jump into messaging.
+export interface PeerCard {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  bio: string | null;
+  skills: string[];
+  careerInterests: string[];
+  languages: string[];
+  location: string | null;
+  isConnected: boolean;
+}
+
 export type CloudinarySignature =
   | { configured: false; message: string }
   | {

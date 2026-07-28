@@ -26,6 +26,7 @@ export function getDb(): MockDb {
     // messaging), so returning users don't crash on `undefined.filter(...)`.
     parsed.messageThreads ??= [];
     parsed.chatMessages ??= [];
+    parsed.connections ??= {};
     return parsed;
   } catch {
     const seeded = createSeedDb();
