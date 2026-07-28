@@ -75,9 +75,13 @@ export class MessagingService {
     return conversation;
   }
 
-  /** Real people the given user actually has a job-application relationship
-   * with - youth applicants and the employer whose company they applied to.
-   * Never an arbitrary/fabricated contact. */
+  /** People the given user can legitimately message: for youth, both (a)
+   * the employer at any company they've applied to, and (b) other youth
+   * peers who've opted into PUBLIC profile visibility (peer networking -
+   * EMPLOYERS_ONLY/PRIVATE profiles are deliberately excluded, since that
+   * visibility setting means "don't surface me to fellow youth"). For
+   * employers, applicants to their own postings. Never an arbitrary/
+   * fabricated contact. */
   private async computeContacts(userId: number, role: Role): Promise<Contact[]> {
     const contacts = new Map<string, Contact>();
 
@@ -110,6 +114,27 @@ export class MessagingService {
           role: owner.role,
           companyName: application.job.company.name,
           context: `Applied to ${application.job.title}`,
+        });
+      }
+
+      const peers = await this.prisma.profile.findMany({
+        where: {
+          visibility: 'PUBLIC',
+          user: { id: { not: userId }, status: 'ACTIVE', role: Role.YOUTH_USER },
+        },
+        select: { user: { select: USER_SELECT } },
+        take: 200,
+      });
+
+      for (const peer of peers) {
+        if (contacts.has(peer.user.uuid)) continue;
+        contacts.set(peer.user.uuid, {
+          uuid: peer.user.uuid,
+          firstName: peer.user.firstName,
+          lastName: peer.user.lastName,
+          role: peer.user.role,
+          companyName: null,
+          context: 'Fellow youth on SkillBridge',
         });
       }
     } else if (role === Role.EMPLOYER) {
@@ -243,12 +268,15 @@ export class MessagingService {
     const contacts = await this.computeContacts(me.id, me.role);
     const contact = contacts.find((candidate) => candidate.uuid === recipientUuid);
     if (!contact) {
-      throw new ForbiddenException('You can only message someone you have an active application with.');
+      throw new ForbiddenException('You are not able to message this person.');
     }
 
     const recipient = await this.resolveUser(recipientUuid);
     const [participantOneId, participantTwoId] = this.orderPair(me.id, recipient.id);
-    const jobTitle = contact.context.replace(/^Applied to /, '');
+    // Only a real job-application contact has an actual job title to store -
+    // a peer contact's context ("Fellow youth on SkillBridge") isn't one.
+    const jobTitleMatch = /^Applied to (.+)$/.exec(contact.context);
+    const jobTitle = jobTitleMatch?.[1];
 
     const conversation = await this.prisma.conversation.upsert({
       where: { participantOneId_participantTwoId: { participantOneId, participantTwoId } },
