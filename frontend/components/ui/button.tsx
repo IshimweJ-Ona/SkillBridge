@@ -30,7 +30,11 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 
 export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-[var(--sb-radius-sm)] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
+    // shrink-0 + whitespace-nowrap: without these, a button sitting next to
+    // a flexible sibling (e.g. a page title) can get squeezed narrower than
+    // its label needs in a flex row, wrapping "New Listing" onto two lines
+    // instead of the title truncating/wrapping around it.
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--sb-radius-sm)] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     className,

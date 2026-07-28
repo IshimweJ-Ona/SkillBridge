@@ -23,8 +23,8 @@ export default function MyListingsPage() {
 
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-xl font-semibold">{t("marketplace.myListingsTitle")}</h1>
           <p className="text-sm text-[var(--sb-text-muted)]">{t("marketplace.myListingsSubtitle")}</p>
         </div>

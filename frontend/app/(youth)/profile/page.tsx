@@ -24,6 +24,23 @@ import { validatePassword } from "@/lib/validation";
 
 type TabKey = "overview" | "skills" | "portfolio" | "settings";
 
+// Must mirror the backend's UpdateProfileDto exactly (backend/src/profiles/
+// dto/update-profile.dto.ts) - the API runs with forbidNonWhitelisted, so
+// any field here that isn't declared there 400s the whole save, and any
+// field the DTO accepts but this list omits silently never gets persisted.
+const EDITABLE_PROFILE_FIELDS = [
+  "avatarUrl",
+  "headline",
+  "bio",
+  "location",
+  "skills",
+  "careerInterests",
+  "languages",
+  "educationLevel",
+  "portfolioUrl",
+  "cvUrl",
+] as const satisfies readonly (keyof Profile)[];
+
 function ProfilePageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
@@ -73,7 +90,19 @@ function ProfilePageContent() {
   const save = useCallback(
     async (value: Partial<Profile>) => {
       if (!profile || !user) return;
-      const updated = await profiles.update(profile.uuid, value);
+      // `value` is the full `form` state, which was seeded from the
+      // complete Profile the API returned (setForm(result) below) -
+      // including server-computed fields like uuid/brandScore/
+      // profileCompleteness/verifiedBadgeCount/endorsementCount that
+      // UpdateProfileDto doesn't declare. The backend's ValidationPipe runs
+      // with forbidNonWhitelisted: true, so forwarding those extra fields
+      // makes every save 400 - silently or as "Save failed - Retry". Only
+      // the fields the update endpoint actually accepts may be sent.
+      const payload: Partial<Profile> = {};
+      for (const field of EDITABLE_PROFILE_FIELDS) {
+        if (field in value) (payload as Record<string, unknown>)[field] = value[field];
+      }
+      const updated = await profiles.update(profile.uuid, payload);
       setProfile(updated);
     },
     [profile, user],

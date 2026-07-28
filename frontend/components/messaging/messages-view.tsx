@@ -164,15 +164,15 @@ export function MessagesView() {
 
   return (
     <div className="flex h-[calc(100vh-8.5rem)] flex-col gap-4">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-lg font-semibold text-[var(--sb-text)]">{t("messages.title")}</h1>
           <p className="text-xs text-[var(--sb-text-muted)]">{t("messages.subtitle")}</p>
         </div>
         <button
           type="button"
           onClick={openComposer}
-          className="flex h-9 items-center gap-1.5 rounded-[var(--sb-radius-sm)] bg-gradient-to-b from-[var(--sb-primary-hover)] to-[var(--sb-primary)] px-3 text-xs font-medium text-white shadow-[0_4px_14px_-2px_var(--sb-primary-glow)] hover:from-[var(--sb-primary-hover)] hover:to-[var(--sb-primary-hover)]"
+          className="flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-[var(--sb-radius-sm)] bg-gradient-to-b from-[var(--sb-primary-hover)] to-[var(--sb-primary)] px-3 text-xs font-medium text-white shadow-[0_4px_14px_-2px_var(--sb-primary-glow)] hover:from-[var(--sb-primary-hover)] hover:to-[var(--sb-primary-hover)]"
         >
           <MessageSquarePlus size={15} />
           {t("messages.newConversation")}

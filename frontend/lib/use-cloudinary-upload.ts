@@ -31,13 +31,25 @@ export function useCloudinaryUpload(folder?: string) {
       formData.append("folder", signature.folder);
       if (signature.publicId) formData.append("public_id", signature.publicId);
 
+      // resource_type "auto" (in the URL, not a form field) - Cloudinary
+      // inspects the file itself and accepts any image format it supports
+      // (JPEG, PNG, HEIC/HEIF, WEBP, GIF, BMP, TIFF, ...) rather than us
+      // needing to allowlist formats; nothing here restricts by extension or
+      // MIME type beyond the browser's own `accept="image/*"` file picker.
       const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/auto/upload`, {
         method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error(`Upload failed with status ${response.status}.`);
+        // Surface Cloudinary's actual reason (e.g. a genuinely unsupported
+        // format, or a misconfigured upload preset) instead of a bare status
+        // code, so "why did this fail" is answerable from the error alone.
+        const reason = await response
+          .json()
+          .then((body: { error?: { message?: string } }) => body.error?.message)
+          .catch(() => undefined);
+        throw new Error(reason ?? `Upload failed with status ${response.status}.`);
       }
 
       const result = (await response.json()) as { secure_url: string };
