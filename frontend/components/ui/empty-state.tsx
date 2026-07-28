@@ -27,7 +27,7 @@ export function EmptyState({
         // properties aren't reliably resolved across browsers.
         <Picture primaryColor="#d81b3d" height="140px" className="mb-1" />
       ) : Icon ? (
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--sb-primary-soft)] text-[var(--sb-primary)]">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[var(--sb-bg-inset)] text-[var(--sb-text)]">
           <Icon size={20} />
         </div>
       ) : null}

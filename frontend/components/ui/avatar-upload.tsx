@@ -4,6 +4,7 @@ import { Camera, Loader2 } from "@/lib/icons";
 import { useRef } from "react";
 import { useCloudinaryUpload } from "@/lib/use-cloudinary-upload";
 import { Avatar } from "./avatar";
+import { useToast } from "./toast";
 
 export function AvatarUpload({
   firstName,
@@ -20,13 +21,21 @@ export function AvatarUpload({
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const { upload, uploading, error } = useCloudinaryUpload("skillbridge/avatars");
+  const { show } = useToast();
 
   const handleFileSelect = async (file: File) => {
     try {
       const url = await upload(file);
       onChange(url);
-    } catch {
-      // error state is already surfaced below via the hook
+    } catch (err) {
+      // Inline text below is easy to miss on a small avatar widget, so also
+      // surface the same message as a toast - most visibly for the 2MB
+      // limit, which is the error users hit most often.
+      show({
+        variant: "error",
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : undefined,
+      });
     }
   };
 

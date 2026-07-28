@@ -179,7 +179,7 @@ function StatTile({
 }) {
   return (
     <Card className="p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--sb-shadow-md)]">
-      <div className="flex h-8 w-8 items-center justify-center rounded-[0.55rem] bg-[var(--sb-primary-soft)] text-[var(--sb-primary)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[0.55rem] bg-[var(--sb-bg-inset)] text-[var(--sb-text)]">
         <Icon size={15} />
       </div>
       <p className="mt-3 text-2xl font-bold text-[var(--sb-text)]">

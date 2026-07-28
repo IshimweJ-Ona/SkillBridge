@@ -76,7 +76,7 @@ export default function WelcomePage() {
                 : "pointer-events-none opacity-50",
             )}
           >
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.65rem] bg-[var(--sb-primary-soft)] text-[var(--sb-primary)] ring-1 ring-[var(--sb-primary)]/20">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.65rem] bg-[var(--sb-bg-inset)] text-[var(--sb-text)] ring-1 ring-[var(--sb-border-strong)] transition-colors group-hover:bg-[var(--sb-primary-soft)] group-hover:text-[var(--sb-primary)] group-hover:ring-[var(--sb-primary)]/20">
               <role.icon size={19} />
             </div>
             <div className="min-w-0 flex-1">

@@ -4,6 +4,7 @@ import { Loader2, Paperclip, RefreshCw, UploadCloud, X } from "@/lib/icons";
 import { useRef, useState } from "react";
 import { useCloudinaryUpload } from "@/lib/use-cloudinary-upload";
 import { Input } from "./input";
+import { useToast } from "./toast";
 
 interface FileUploadProps {
   label: string;
@@ -25,12 +26,18 @@ export function FileUpload({ label, value, onChange, folder, accept, hint }: Fil
   const inputRef = useRef<HTMLInputElement>(null);
   const { upload, uploading, error, setError } = useCloudinaryUpload(folder);
   const [manualMode, setManualMode] = useState(false);
+  const { show } = useToast();
 
   const handleFileSelect = async (file: File) => {
     try {
       const url = await upload(file);
       onChange(url);
-    } catch {
+    } catch (err) {
+      show({
+        variant: "error",
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : undefined,
+      });
       setManualMode(true);
     }
   };

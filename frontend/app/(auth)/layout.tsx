@@ -26,11 +26,15 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           }}
         />
         <Logo size={34} />
+        {/* This panel's background is a hardcoded dark gradient regardless of
+            the site's (light) theme, so its foreground must be hardcoded
+            light too - the --sb-text/-muted/-faint vars resolve to
+            near-black for the light theme and were unreadable here. */}
         <div className="relative">
-          <span className="inline-flex items-center rounded-full border border-[var(--sb-border-strong)] bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-[var(--sb-text-muted)]">
+          <span className="inline-flex items-center rounded-full border border-white/15 bg-white/5 px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-white/70">
             {t("auth.badge")}
           </span>
-          <h1 className="mt-4 text-3xl font-bold leading-tight text-[var(--sb-text)]">
+          <h1 className="mt-4 text-3xl font-bold leading-tight text-white">
             {t("auth.tagline1")}
             <br />
             <span className="bg-gradient-to-r from-[var(--sb-primary-hover)] to-[var(--sb-accent)] bg-clip-text text-transparent">
@@ -40,18 +44,18 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div className="mt-10 space-y-5">
             {FEATURES.map((feature) => (
               <div key={feature.title} className="flex items-start gap-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.6rem] bg-[var(--sb-primary-soft)] text-[var(--sb-primary)] ring-1 ring-[var(--sb-primary)]/20">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[0.6rem] bg-white/10 text-white ring-1 ring-white/15">
                   <feature.icon size={16} />
                 </div>
                 <div>
-                  <p className="text-sm font-medium text-[var(--sb-text)]">{feature.title}</p>
-                  <p className="text-xs text-[var(--sb-text-muted)]">{feature.description}</p>
+                  <p className="text-sm font-medium text-white">{feature.title}</p>
+                  <p className="text-xs text-white/60">{feature.description}</p>
                 </div>
               </div>
             ))}
           </div>
         </div>
-        <p className="relative text-xs text-[var(--sb-text-faint)]">{t("auth.footer")}</p>
+        <p className="relative text-xs text-white/40">{t("auth.footer")}</p>
       </aside>
       <div className="flex flex-1 flex-col items-center justify-center bg-[var(--sb-bg)] px-4 py-10">
         <div className="mb-6 lg:hidden">

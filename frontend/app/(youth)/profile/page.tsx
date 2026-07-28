@@ -137,8 +137,9 @@ function ProfilePageContent() {
             lastName={user?.lastName ?? ""}
             imageUrl={form.avatarUrl}
             onChange={(url) => {
-              setForm((f) => ({ ...f, avatarUrl: url }));
-              saveNow();
+              const next = { ...form, avatarUrl: url };
+              setForm(next);
+              saveNow(next);
             }}
           />
         </div>
@@ -189,42 +190,44 @@ function ProfilePageContent() {
                 label={t("profile.headline")}
                 value={form.headline ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
-                onBlur={saveNow}
+                onBlur={() => saveNow()}
               />
               <Textarea
                 label={t("profile.aboutMe")}
                 value={form.bio ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                onBlur={saveNow}
+                onBlur={() => saveNow()}
               />
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label={t("profile.location")}
                   value={form.location ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                  onBlur={saveNow}
+                  onBlur={() => saveNow()}
                 />
                 <Input
                   label={t("profile.educationLevel")}
                   value={form.educationLevel ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, educationLevel: e.target.value }))}
-                  onBlur={saveNow}
+                  onBlur={() => saveNow()}
                 />
               </div>
               <TagInput
                 label={t("profile.careerInterests")}
                 values={form.careerInterests ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, careerInterests: values }));
-                  saveNow();
+                  const next = { ...form, careerInterests: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
               />
               <TagInput
                 label={t("profile.languages")}
                 values={form.languages ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, languages: values }));
-                  saveNow();
+                  const next = { ...form, languages: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
               />
             </CardContent>
@@ -241,8 +244,9 @@ function ProfilePageContent() {
                 label={t("profile.yourSkills")}
                 values={form.skills ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, skills: values }));
-                  saveNow();
+                  const next = { ...form, skills: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
                 placeholder="e.g. React.js"
               />
@@ -265,15 +269,16 @@ function ProfilePageContent() {
                 placeholder="https://your-portfolio-site.com"
                 value={form.portfolioUrl ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, portfolioUrl: e.target.value }))}
-                onBlur={saveNow}
+                onBlur={() => saveNow()}
                 hint={t("profile.portfolioHint")}
               />
               <FileUpload
                 label={t("profile.cv")}
                 value={form.cvUrl ?? ""}
                 onChange={(url) => {
-                  setForm((f) => ({ ...f, cvUrl: url }));
-                  saveNow();
+                  const next = { ...form, cvUrl: url };
+                  setForm(next);
+                  saveNow(next);
                 }}
                 folder="skillbridge/cvs"
                 accept=".pdf,.doc,.docx"
