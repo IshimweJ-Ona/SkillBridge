@@ -1,5 +1,5 @@
 import { ApiError, type ChatMessage, type MessageableContact, type MessageThread } from "../types";
-import { publicYouthPeers, requireSession } from "./helpers";
+import { requireSession } from "./helpers";
 import { getDb, mockLatency, saveDb } from "./store";
 import type { MockDb } from "./fixtures";
 
@@ -200,11 +200,17 @@ async function computeContacts(db: MockDb, userUuid: string, role: string): Prom
       });
     }
 
-    // Peer networking: other youth who've opted into PUBLIC profile
-    // visibility (EMPLOYERS_ONLY/PRIVATE means "don't surface me to fellow
-    // youth") - mirrors messaging.service.ts#computeContacts on the backend.
-    for (const candidate of publicYouthPeers(db, userUuid)) {
-      if (byUuid.has(candidate.uuid)) continue;
+    // Peer messaging is gated on an ACCEPTED Connect request, not on
+    // profile visibility alone - mirrors messaging.service.ts#computeContacts
+    // on the backend.
+    const acceptedPeerUuids = db.connections
+      .filter((row) => row.status === "ACCEPTED" && (row.requesterUuid === userUuid || row.recipientUuid === userUuid))
+      .map((row) => (row.requesterUuid === userUuid ? row.recipientUuid : row.requesterUuid));
+
+    for (const peerUuid of acceptedPeerUuids) {
+      if (byUuid.has(peerUuid)) continue;
+      const candidate = db.users.find((user) => user.uuid === peerUuid);
+      if (!candidate) continue;
       byUuid.set(candidate.uuid, {
         uuid: candidate.uuid,
         firstName: candidate.firstName,

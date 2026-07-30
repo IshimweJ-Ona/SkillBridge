@@ -166,6 +166,16 @@ export interface ChallengeResource {
   url: string;
 }
 
+// The multiple-choice question shape as seen by a test-taker - the correct
+// answer index is never sent to the client (backend strips it), only used
+// server-side at grading time.
+export interface ChallengeQuestion {
+  id: string;
+  prompt: string;
+  options: string[];
+  points?: number;
+}
+
 export interface SkillChallenge {
   uuid: string;
   title: string;
@@ -177,6 +187,7 @@ export interface SkillChallenge {
   durationMinutes: number;
   passingScore: number;
   status: ChallengeStatus;
+  questions?: ChallengeQuestion[];
   resources?: ChallengeResource[];
   createdAt: string;
   company?: Company;
@@ -347,10 +358,8 @@ export interface AdminUser {
 
 export interface IntegrationStatus {
   resendConfigured: boolean;
-  mtnMomoSandboxConfigured: boolean;
   cloudinaryConfigured: boolean;
   emailProvider: string;
-  paymentProvider: string;
   mediaProvider: string;
 }
 
@@ -454,8 +463,10 @@ export interface MessageableContact {
 }
 
 // Connect directory (backend/src/connections, served by identity-api) - the
-// fellow-youth network: browse/search PUBLIC-visibility youth profiles, save
-// one as a connection, or jump into messaging.
+// fellow-youth network: browse/search PUBLIC-visibility youth profiles,
+// request/accept a connection, or jump into messaging once connected.
+export type ConnectionState = "NONE" | "PENDING_SENT" | "PENDING_RECEIVED" | "ACCEPTED";
+
 export interface PeerCard {
   uuid: string;
   firstName: string;
@@ -467,7 +478,7 @@ export interface PeerCard {
   careerInterests: string[];
   languages: string[];
   location: string | null;
-  isConnected: boolean;
+  connectionState: ConnectionState;
 }
 
 export type CloudinarySignature =

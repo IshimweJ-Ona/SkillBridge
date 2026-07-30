@@ -26,7 +26,10 @@ export function getDb(): MockDb {
     // messaging), so returning users don't crash on `undefined.filter(...)`.
     parsed.messageThreads ??= [];
     parsed.chatMessages ??= [];
-    parsed.connections ??= {};
+    // Earlier shape was a Record<string, string[]> (instant-connect, no
+    // request/accept) - reset rather than migrate, since it's just demo
+    // local-storage state, never real user data.
+    if (!Array.isArray(parsed.connections)) parsed.connections = [];
     return parsed;
   } catch {
     const seeded = createSeedDb();

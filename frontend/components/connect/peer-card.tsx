@@ -1,6 +1,6 @@
 "use client";
 
-import { MessageSquare, UserCheck, UserPlus } from "@/lib/icons";
+import { Check, MessageSquare, UserCheck, UserPlus, UserX } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -10,12 +10,16 @@ import { useTranslations } from "@/lib/i18n/context";
 
 export function PeerCard({
   peer,
-  connectPending,
-  onToggleConnect,
+  pending,
+  onRequestConnection,
+  onAcceptRequest,
+  onRemoveConnection,
 }: {
   peer: PeerCardData;
-  connectPending: boolean;
-  onToggleConnect: (peer: PeerCardData) => void;
+  pending: boolean;
+  onRequestConnection: (peer: PeerCardData) => void;
+  onAcceptRequest: (peer: PeerCardData) => void;
+  onRemoveConnection: (peer: PeerCardData) => void;
 }) {
   const router = useRouter();
   const t = useTranslations();
@@ -56,33 +60,37 @@ export function PeerCard({
       )}
 
       <div className="mt-auto flex items-center gap-2 pt-1">
-        <Button
-          type="button"
-          variant={peer.isConnected ? "secondary" : "primary"}
-          size="sm"
-          loading={connectPending}
-          onClick={() => onToggleConnect(peer)}
-          className="flex-1"
-        >
-          {peer.isConnected ? (
-            <>
-              <UserCheck size={14} /> {t("connect.connectedAction")}
-            </>
-          ) : (
-            <>
-              <UserPlus size={14} /> {t("connect.connectAction")}
-            </>
-          )}
-        </Button>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => router.push(`/messages?to=${peer.uuid}`)}
-          className="flex-1"
-        >
-          <MessageSquare size={14} /> {t("connect.messageAction")}
-        </Button>
+        {peer.connectionState === "ACCEPTED" && (
+          <Button type="button" variant="secondary" size="sm" loading={pending} onClick={() => onRemoveConnection(peer)} className="flex-1">
+            <UserCheck size={14} /> {t("connect.connectedAction")}
+          </Button>
+        )}
+        {peer.connectionState === "PENDING_SENT" && (
+          <Button type="button" variant="secondary" size="sm" loading={pending} onClick={() => onRemoveConnection(peer)} className="flex-1">
+            <UserX size={14} /> {t("connect.cancelRequestAction")}
+          </Button>
+        )}
+        {peer.connectionState === "PENDING_RECEIVED" && (
+          <Button type="button" variant="primary" size="sm" loading={pending} onClick={() => onAcceptRequest(peer)} className="flex-1">
+            <Check size={14} /> {t("connect.acceptAction")}
+          </Button>
+        )}
+        {peer.connectionState === "NONE" && (
+          <Button type="button" variant="primary" size="sm" loading={pending} onClick={() => onRequestConnection(peer)} className="flex-1">
+            <UserPlus size={14} /> {t("connect.connectAction")}
+          </Button>
+        )}
+        {peer.connectionState === "ACCEPTED" && (
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => router.push(`/messages?to=${peer.uuid}`)}
+            className="flex-1"
+          >
+            <MessageSquare size={14} /> {t("connect.messageAction")}
+          </Button>
+        )}
       </div>
     </Card>
   );

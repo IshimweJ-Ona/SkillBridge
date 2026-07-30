@@ -7,7 +7,6 @@ import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { StatusPill } from "@/components/ui/status-pill";
-import { Textarea } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
 import { ApiError, challenges, type ChallengeSubmission, type SkillChallenge } from "@/lib/api";
 import { useTranslations } from "@/lib/i18n/context";
@@ -21,22 +20,22 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
 
   const [challenge, setChallenge] = useState<SkillChallenge | null>(null);
   const [submission, setSubmission] = useState<ChallengeSubmission | null>(null);
-  const [response, setResponse] = useState("");
+  const [responses, setResponses] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState<number | null>(null);
 
   // Refs so the timer/visibility effects below always see the latest
-  // response/submission without re-subscribing their listeners on every
-  // keystroke or re-render. Synced via effects, not during render, per
+  // responses/submission without re-subscribing their listeners on every
+  // answer change or re-render. Synced via effects, not during render, per
   // react-hooks/refs (mutating ref.current during render is unsafe).
-  const responseRef = useRef(response);
+  const responsesRef = useRef(responses);
   const submissionRef = useRef(submission);
   const autoEndedRef = useRef(false);
 
   useEffect(() => {
-    responseRef.current = response;
-  }, [response]);
+    responsesRef.current = responses;
+  }, [responses]);
 
   useEffect(() => {
     submissionRef.current = submission;
@@ -58,19 +57,20 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
   }, [uuid]);
 
   const { status: autosaveStatus, saveNow } = useAutosave(
-    response,
+    responses,
     async (value) => {
       if (submission && submission.status === "IN_PROGRESS") {
-        await challenges.autosave(submission.uuid, { responseText: value });
+        await challenges.autosave(submission.uuid, { responses: value });
       }
     },
-    60000,
+    30000,
   );
 
   const handleStart = async () => {
     try {
       const created = await challenges.start(uuid);
       setSubmission(created);
+      setResponses({});
     } catch (err) {
       show({ variant: "error", title: t("learningHub.startError"), description: err instanceof ApiError ? err.message : undefined });
     }
@@ -80,7 +80,7 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
     if (!submission) return;
     setSubmitting(true);
     try {
-      const graded = await challenges.submit(submission.uuid, { responseText: response });
+      const graded = await challenges.submit(submission.uuid, { responses });
       setSubmission(graded);
       const passed = challenge && (graded.score ?? 0) >= challenge.passingScore;
       show({
@@ -96,7 +96,7 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
   };
 
   // Countdown from submission.startedAt + challenge.durationMinutes. Running
-  // out of time auto-submits whatever response exists so far - a fairness
+  // out of time auto-submits whatever answers exist so far - a fairness
   // expiry, not a punishment (unlike leaving the tab, below).
   useEffect(() => {
     if (!challenge || !submission || submission.status !== "IN_PROGRESS") {
@@ -114,7 +114,7 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
       if (secondsLeft <= 0 && !autoEndedRef.current && submissionRef.current?.status === "IN_PROGRESS") {
         autoEndedRef.current = true;
         challenges
-          .submit(submissionRef.current.uuid, { responseText: responseRef.current })
+          .submit(submissionRef.current.uuid, { responses: responsesRef.current })
           .then((graded) => setSubmission(graded))
           .catch(() => undefined);
       }
@@ -156,6 +156,9 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
   }, [submission?.uuid, submission?.status, show, t]);
 
   const externalTest = challenge?.resources?.find((resource) => resource.type === "external_test");
+  const questions = challenge?.questions ?? [];
+  const hasQuestions = questions.length > 0;
+  const allAnswered = questions.every((question) => responses[question.id] !== undefined);
 
   if (loading) {
     return (
@@ -200,7 +203,7 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
         </div>
       </Card>
 
-      {externalTest && (
+      {externalTest && !hasQuestions && (
         <Card className="p-5">
           <p className="text-sm font-medium">{t("learningHub.externalTestTitle")}</p>
           <p className="mt-1 text-xs text-[var(--sb-text-muted)]">{t("learningHub.externalTestBody")}</p>
@@ -210,24 +213,24 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
             rel="noreferrer"
             className="mt-3 inline-flex items-center gap-1.5 rounded-[var(--sb-radius-md)] bg-[var(--sb-primary)] px-4 py-2 text-sm font-medium text-[var(--sb-primary-foreground)] hover:bg-[var(--sb-primary-hover)]"
           >
-            {externalTest.label} <ExternalLink size={14} />
+            {t("learningHub.openTest")} <ExternalLink size={14} />
           </a>
         </Card>
       )}
 
-      {!submission && (
+      {hasQuestions && !submission && (
         <Card className="p-5 text-center">
           <p className="text-sm text-[var(--sb-text-muted)]">{t("learningHub.startHint")}</p>
           <Button className="mt-4" onClick={handleStart}>
-            {t("learningHub.startChallenge")}
+            {t("learningHub.openTest")}
           </Button>
         </Card>
       )}
 
-      {submission && submission.status === "IN_PROGRESS" && (
+      {hasQuestions && submission && submission.status === "IN_PROGRESS" && (
         <Card className="p-5">
-          <div className="mb-2 flex items-center justify-between">
-            <p className="text-sm font-medium">{t("learningHub.yourResponse")}</p>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="text-sm font-medium">{t("learningHub.yourAnswers")}</p>
             <div className="flex items-center gap-3">
               {remainingSeconds !== null && (
                 <span
@@ -243,14 +246,36 @@ export function ChallengeWorkspaceClient({ uuid }: { uuid: string }) {
               <AutosaveIndicator status={autosaveStatus} onRetry={saveNow} />
             </div>
           </div>
-          <p className="mb-3 text-xs text-[var(--sb-text-faint)]">{t("learningHub.integrityWarning")}</p>
-          <Textarea
-            value={response}
-            onChange={(event) => setResponse(event.target.value)}
-            placeholder={t("learningHub.responsePlaceholder")}
-            className="min-h-48"
-          />
-          <Button className="mt-4" onClick={handleSubmit} loading={submitting}>
+          <p className="mb-4 text-xs text-[var(--sb-text-faint)]">{t("learningHub.integrityWarning")}</p>
+
+          <div className="space-y-5">
+            {questions.map((question, questionIndex) => (
+              <div key={question.id}>
+                <p className="text-sm font-medium text-[var(--sb-text)]">
+                  {questionIndex + 1}. {question.prompt}
+                </p>
+                <div className="mt-2 space-y-1.5">
+                  {question.options.map((option, optionIndex) => (
+                    <label
+                      key={optionIndex}
+                      className="flex items-center gap-2 rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] px-3 py-2 text-sm text-[var(--sb-text)] hover:bg-[var(--sb-bg-panel-hover)]"
+                    >
+                      <input
+                        type="radio"
+                        name={question.id}
+                        checked={responses[question.id] === String(optionIndex)}
+                        onChange={() => setResponses((current) => ({ ...current, [question.id]: String(optionIndex) }))}
+                        className="h-4 w-4 shrink-0 border-[var(--sb-border)]"
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <Button className="mt-5" onClick={handleSubmit} loading={submitting} disabled={!allAnswered}>
             {t("learningHub.submitChallenge")}
           </Button>
         </Card>

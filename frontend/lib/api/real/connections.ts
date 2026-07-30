@@ -1,6 +1,6 @@
 import { apiFetch } from "../client";
 import { API_BASES } from "../config";
-import type { Paginated, PeerCard } from "../types";
+import type { ConnectionState, Paginated, PeerCard } from "../types";
 
 const base = API_BASES.identity;
 
@@ -12,8 +12,14 @@ export const connectionsApi = {
 
   listMine: () => apiFetch<PeerCard[]>(base, "/connections"),
 
-  connect: (uuid: string) => apiFetch<{ connected: boolean }>(base, `/connections/${uuid}`, { method: "POST" }),
+  pendingRequests: () => apiFetch<PeerCard[]>(base, "/connections/requests"),
 
-  disconnect: (uuid: string) =>
-    apiFetch<{ connected: boolean }>(base, `/connections/${uuid}`, { method: "DELETE" }),
+  requestConnection: (uuid: string) =>
+    apiFetch<{ connectionState: ConnectionState }>(base, `/connections/${uuid}`, { method: "POST" }),
+
+  acceptRequest: (uuid: string) =>
+    apiFetch<{ connectionState: ConnectionState }>(base, `/connections/${uuid}/accept`, { method: "POST" }),
+
+  removeConnection: (uuid: string) =>
+    apiFetch<{ connectionState: ConnectionState }>(base, `/connections/${uuid}`, { method: "DELETE" }),
 };

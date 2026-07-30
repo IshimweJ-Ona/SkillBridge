@@ -6,10 +6,8 @@ export const integrationsApiMock = {
     await mockLatency(80, 200);
     return {
       resendConfigured: false,
-      mtnMomoSandboxConfigured: false,
       cloudinaryConfigured: false,
       emailProvider: "resend",
-      paymentProvider: "mtn-momo-sandbox",
       mediaProvider: "cloudinary",
     };
   },

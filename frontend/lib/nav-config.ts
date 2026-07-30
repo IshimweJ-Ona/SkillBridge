@@ -18,7 +18,6 @@ import {
   UserRound,
   Users,
   UsersPlus,
-  Wallet,
   type LucideIcon,
 } from "@/lib/icons";
 
@@ -55,7 +54,6 @@ export const YOUTH_NAV: NavItem[] = [
   { labelKey: "nav.youth.marketplace", href: "/marketplace", icon: Store },
   { labelKey: "nav.youth.myListings", href: "/marketplace/my-listings", icon: Store },
   { labelKey: "nav.youth.requests", href: "/marketplace/requests", icon: Inbox },
-  { labelKey: "nav.youth.wallet", href: "/wallet", icon: Wallet },
   { labelKey: "nav.youth.settings", href: "/profile?tab=settings", icon: Settings },
 ];
 
@@ -63,6 +61,7 @@ export const EMPLOYER_NAV: NavItem[] = [
   { labelKey: "nav.employer.dashboard", href: "/employer/dashboard", icon: LayoutDashboard },
   { labelKey: "nav.employer.company", href: "/employer/company", icon: Building2 },
   { labelKey: "nav.employer.jobPostings", href: "/employer/jobs", icon: Briefcase },
+  { labelKey: "nav.employer.skillTests", href: "/employer/skill-tests", icon: GraduationCap },
   { labelKey: "nav.employer.applicants", href: "/employer/applicants", icon: Users },
   { labelKey: "nav.employer.messages", href: "/employer/messages", icon: MessageSquare },
 ];

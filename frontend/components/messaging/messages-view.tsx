@@ -161,7 +161,6 @@ function MessagesViewInner() {
     if (!prefillRecipientUuid || appliedPrefillRef.current) return;
     appliedPrefillRef.current = true;
     openComposer();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillRecipientUuid]);
 
   useEffect(() => {

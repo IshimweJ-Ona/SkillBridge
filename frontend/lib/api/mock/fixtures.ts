@@ -20,9 +20,19 @@ import type {
   Subscription,
   User,
 } from "../types";
+import type { ChallengeQuestionInput } from "../real/challenges";
 
 export interface MockUser extends User {
   password: string;
+}
+
+// Mirrors backend/prisma/schema.prisma's Connection model: `requesterUuid`
+// sent the request, `recipientUuid` accepts/rejects it. PENDING until
+// accepted - rejecting just removes the row (see connections.ts mock).
+export interface MockConnection {
+  requesterUuid: string;
+  recipientUuid: string;
+  status: "PENDING" | "ACCEPTED";
 }
 
 export interface MockDb {
@@ -37,7 +47,7 @@ export interface MockDb {
   jobMatches: (JobMatch & { userUuid: string })[];
   applications: (JobApplication & { userUuid: string })[];
   challenges: SkillChallenge[];
-  submissions: (ChallengeSubmission & { userUuid: string })[];
+  submissions: (ChallengeSubmission & { userUuid: string; fullQuestions?: ChallengeQuestionInput[] })[];
   badges: (SkillBadge & { userUuid: string })[];
   notifications: (AppNotification & { userUuid: string })[];
   earnings: Record<string, EarningsSummary>;
@@ -51,9 +61,9 @@ export interface MockDb {
   // Threads and messages are only ever created by real user action.
   messageThreads: MessageThread[];
   chatMessages: ChatMessage[];
-  // Connect directory: maps a userUuid to the uuids they've saved as a
-  // connection. Starts empty - saving a peer is always a real user action.
-  connections: Record<string, string[]>;
+  // Connect directory - request/accept connections between youth peers.
+  // Starts empty; every row is created by a real Connect button click.
+  connections: MockConnection[];
 }
 
 const DEMO_YOUTH_UUID = "10000000-0000-4000-8000-000000000001";
@@ -686,7 +696,7 @@ export function createSeedDb(): MockDb {
     contracts: [],
     messageThreads: [],
     chatMessages: [],
-    connections: {},
+    connections: [],
   };
 }
 

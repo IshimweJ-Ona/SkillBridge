@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, MapPin, MessageSquare, UserCheck, UserPlus } from "@/lib/icons";
+import { Check, Loader2, MapPin, MessageSquare, UserCheck, UserPlus, UserX } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -37,7 +37,7 @@ export function ConnectProfileClient({ uuid }: { uuid: string }) {
   const [peer, setPeer] = useState<PeerCard | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
-  const [connectPending, setConnectPending] = useState(false);
+  const [actionPending, setActionPending] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -59,16 +59,12 @@ export function ConnectProfileClient({ uuid }: { uuid: string }) {
     };
   }, [uuid]);
 
-  const handleToggleConnect = async () => {
+  const runAction = async (action: () => Promise<{ connectionState: PeerCard["connectionState"] }>) => {
     if (!peer) return;
-    setConnectPending(true);
+    setActionPending(true);
     try {
-      if (peer.isConnected) {
-        await connections.disconnect(peer.uuid);
-      } else {
-        await connections.connect(peer.uuid);
-      }
-      setPeer({ ...peer, isConnected: !peer.isConnected });
+      const result = await action();
+      setPeer({ ...peer, connectionState: result.connectionState });
     } catch (err) {
       show({
         variant: "error",
@@ -76,7 +72,7 @@ export function ConnectProfileClient({ uuid }: { uuid: string }) {
         description: err instanceof ApiError ? err.message : undefined,
       });
     } finally {
-      setConnectPending(false);
+      setActionPending(false);
     }
   };
 
@@ -126,25 +122,41 @@ export function ConnectProfileClient({ uuid }: { uuid: string }) {
         </div>
 
         <div className="mt-4 flex items-center gap-2">
-          <Button
-            type="button"
-            variant={peer.isConnected ? "secondary" : "primary"}
-            loading={connectPending}
-            onClick={handleToggleConnect}
-          >
-            {peer.isConnected ? (
-              <>
-                <UserCheck size={15} /> {t("connect.connectedAction")}
-              </>
-            ) : (
-              <>
-                <UserPlus size={15} /> {t("connect.connectAction")}
-              </>
-            )}
-          </Button>
-          <Button type="button" variant="secondary" onClick={() => router.push(`/messages?to=${peer.uuid}`)}>
-            <MessageSquare size={15} /> {t("connect.messageAction")}
-          </Button>
+          {peer.connectionState === "NONE" && (
+            <Button type="button" loading={actionPending} onClick={() => runAction(() => connections.requestConnection(peer.uuid))}>
+              <UserPlus size={15} /> {t("connect.connectAction")}
+            </Button>
+          )}
+          {peer.connectionState === "PENDING_SENT" && (
+            <Button
+              type="button"
+              variant="secondary"
+              loading={actionPending}
+              onClick={() => runAction(() => connections.removeConnection(peer.uuid))}
+            >
+              <UserX size={15} /> {t("connect.cancelRequestAction")}
+            </Button>
+          )}
+          {peer.connectionState === "PENDING_RECEIVED" && (
+            <Button type="button" loading={actionPending} onClick={() => runAction(() => connections.acceptRequest(peer.uuid))}>
+              <Check size={15} /> {t("connect.acceptAction")}
+            </Button>
+          )}
+          {peer.connectionState === "ACCEPTED" && (
+            <Button
+              type="button"
+              variant="secondary"
+              loading={actionPending}
+              onClick={() => runAction(() => connections.removeConnection(peer.uuid))}
+            >
+              <UserCheck size={15} /> {t("connect.connectedAction")}
+            </Button>
+          )}
+          {peer.connectionState === "ACCEPTED" && (
+            <Button type="button" variant="secondary" onClick={() => router.push(`/messages?to=${peer.uuid}`)}>
+              <MessageSquare size={15} /> {t("connect.messageAction")}
+            </Button>
+          )}
         </div>
 
         {peer.bio && <p className="mt-5 whitespace-pre-line text-sm text-[var(--sb-text-muted)]">{peer.bio}</p>}

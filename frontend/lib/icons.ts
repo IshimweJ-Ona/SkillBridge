@@ -12,7 +12,6 @@ export {
   File02 as FileText,
   ArrowDownRight,
   ArrowUpRight,
-  Wallet01 as Wallet,
   ArrowRight,
   BarChart03 as BarChart3,
   Briefcase01 as Briefcase,
@@ -61,7 +60,13 @@ export {
   ShoppingBag01 as Store,
   UserPlus01 as UserPlus,
   UserCheck01 as UserCheck,
+  UserX01 as UserX,
   UsersPlus,
+  Trash01 as Trash,
+  Edit05 as Edit,
+  LogIn01 as LogIn,
+  CreditCard01 as CreditCard,
+  ShieldDollar,
 } from "@untitledui/icons";
 
 import type { FC, SVGProps } from "react";
