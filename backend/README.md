@@ -1,16 +1,17 @@
 # SkillBridge Backend
 
-NestJS + Prisma + PostgreSQL backend for the SkillBridge employability platform. Runs as **5 separate service processes** sharing one Prisma schema, not one monolith:
+NestJS + Prisma + PostgreSQL backend for the SkillBridge employability platform. Runs as **6 separate service processes** sharing one Prisma schema, not one monolith:
 
 | Service | Port | Covers |
 |---|---|---|
-| `identity-api` | 3101 | auth, users, profiles, subscriptions, feedback |
+| `identity-api` | 3101 | auth, users, profiles, connections, subscriptions, feedback |
 | `learning-api` | 3102 | skill challenges, submissions, badges |
 | `matching-api` | 3103 | companies, jobs, applications, real-time notifications gateway |
 | `marketplace-api` | 3104 | freelance listings, contracts, escrow, disputes |
 | `admin-api` | 3105 | analytics, reports, audit log, user/company administration |
+| `messaging-api` | 3106 | threads/messages between an applicant and an employer, or between two connected youth peers |
 
-All 5 share the same Prisma schema, the same source under `src/`, and the same `.env` — they differ only in which NestJS module they boot (`apps/<service>/src/<service>.module.ts`) and which port they listen on. Every route is versioned under `/api/v1`.
+All 6 share the same Prisma schema, the same source under `src/`, and the same `.env` — they differ only in which NestJS module they boot (`apps/<service>/src/<service>.module.ts`) and which port they listen on. Every route is versioned under `/api/v1`.
 
 This README is for **local development**. For deployment, see [`DEPLOYMENT.md`](../DEPLOYMENT.md) at the repo root — it walks through the full server setup and points at [`.env.deploy.example`](.env.deploy.example) for exactly which values in this folder to change.
 
@@ -26,7 +27,7 @@ This README is for **local development**. For deployment, see [`DEPLOYMENT.md`](
 cp .env.example .env
 ```
 
-Every value in `.env.example` is commented with what it does and whether it's required. Short version: `DATABASE_URL` and `AUTH_TOKEN_SECRET` matter immediately; Resend/WhatsApp/MTN MoMo/Cloudinary/Google OAuth can all stay empty for local dev — each degrades gracefully (skipped email, "not configured" payment error, manual URL upload fallback, OAuth button redirects with an error) instead of crashing anything.
+Every value in `.env.example` is commented with what it does and whether it's required. Short version: `DATABASE_URL` and `AUTH_TOKEN_SECRET` matter immediately; Resend/WhatsApp/Cloudinary/Google OAuth can all stay empty for local dev — each degrades gracefully (skipped email, manual URL upload fallback, OAuth button redirects with an error) instead of crashing anything.
 
 ## 2. Database
 
@@ -76,7 +77,7 @@ SkillBridge@123
 
 ## 4. Run
 
-**Docker (recommended)** — from the project root, brings up all 5 services plus the frontend:
+**Docker (recommended)** — from the project root, brings up all 6 services plus the frontend:
 
 ```bash
 docker compose --profile local-db up -d
@@ -85,15 +86,15 @@ docker compose --profile local-db up -d
 **Native, one service at a time** (fast iteration, no rebuild needed per change):
 
 ```bash
-npm run dev:identity      # or dev:learning / dev:matching / dev:marketplace / dev:admin
+npm run dev:identity      # or dev:learning / dev:matching / dev:marketplace / dev:admin / dev:messaging
 ```
 
-**Native, all 5 at once with crash isolation** (matches how it actually runs in production — one service crashing doesn't take down the others):
+**Native, all 6 at once with crash isolation** (matches how it actually runs in production — one service crashing doesn't take down the others):
 
 ```bash
 npm run build
 npm run start:pm2
-pm2 logs        # tail all 5
+pm2 logs        # tail all 6
 pm2 stop all
 ```
 
@@ -174,12 +175,15 @@ PATCH  /api/v1/subscriptions/by-user/:userUuid      YOUTH_USER, EMPLOYER, ADMINI
 <details>
 <summary>challenges, badges</summary>
 
+Two shapes share these routes: an in-app multiple-choice **skill test** (employer-authored `questions`, published immediately, badge auto-issued on a passing score — see Learning Hub) and a job's **pre-screen test** (an admin-secured AutoProctor link via `resources`, gating that one job application, no badge). `questions` is stripped of its answer key before it ever reaches `GET /challenges*` — grading always re-reads the real answers from the database.
+
 ```text
 POST   /api/v1/companies/:companyUuid/challenges       EMPLOYER, ADMINISTRATOR
 GET    /api/v1/challenges                              PUBLIC
 GET    /api/v1/challenges/:uuid                        PUBLIC
 POST   /api/v1/challenges/:uuid/start                  YOUTH_USER, ADMINISTRATOR
 PATCH  /api/v1/challenge-submissions/:uuid/autosave     YOUTH_USER, ADMINISTRATOR
+PATCH  /api/v1/challenge-submissions/:uuid/fail-integrity  YOUTH_USER, ADMINISTRATOR
 POST   /api/v1/challenge-submissions/:uuid/submit       YOUTH_USER, ADMINISTRATOR
 GET    /api/v1/badges/by-user/:userUuid                YOUTH_USER, EMPLOYER, ADMINISTRATOR
 GET    /api/v1/badges/verify/:uuid                     PUBLIC
@@ -188,6 +192,8 @@ GET    /api/v1/badges/verify/:uuid                     PUBLIC
 
 <details>
 <summary>companies, jobs, applications</summary>
+
+A job posted with a raw `preScreenGoogleFormUrl` stays `DRAFT` and shows up in `GET /jobs/pending-pre-screen` until an admin pastes back the real, secured AutoProctor link via `PATCH /jobs/:uuid/approve-pre-screen` — only then does it go `OPEN` and become visible to applicants.
 
 ```text
 POST   /api/v1/companies                    EMPLOYER, ADMINISTRATOR
@@ -199,13 +205,38 @@ POST   /api/v1/companies/:companyUuid/jobs  EMPLOYER, ADMINISTRATOR
 GET    /api/v1/jobs                         PUBLIC
 GET    /api/v1/jobs/matches/me              YOUTH_USER, ADMINISTRATOR
 GET    /api/v1/jobs/mine                    EMPLOYER
+GET    /api/v1/jobs/pending-pre-screen      ADMINISTRATOR
 GET    /api/v1/jobs/:uuid                   PUBLIC
+PATCH  /api/v1/jobs/:uuid/approve-pre-screen ADMINISTRATOR
 POST   /api/v1/jobs/:uuid/match             EMPLOYER, ADMINISTRATOR
 POST   /api/v1/jobs/:uuid/applications      YOUTH_USER, ADMINISTRATOR
 POST   /api/v1/jobs/:uuid/confirm-placement EMPLOYER, ADMINISTRATOR
 
 GET    /api/v1/applications                 YOUTH_USER, EMPLOYER, ADMINISTRATOR
 PATCH  /api/v1/applications/:uuid/status    EMPLOYER, ADMINISTRATOR
+```
+</details>
+
+<details>
+<summary>connections (fellow-youth network), messaging</summary>
+
+Connect is request/accept, not instant: `POST /connections/:uuid` sends a request (or auto-accepts if the other person already requested you), `POST /connections/:uuid/accept` accepts an incoming one, `DELETE /connections/:uuid` cancels/rejects/unfriends. Messaging a fellow youth peer is only possible once a connection is ACCEPTED; messaging an employer is only possible once you've applied to one of their jobs.
+
+```text
+GET    /api/v1/connections/directory        YOUTH_USER
+GET    /api/v1/connections/directory/:uuid  YOUTH_USER
+GET    /api/v1/connections/requests         YOUTH_USER
+GET    /api/v1/connections                  YOUTH_USER
+POST   /api/v1/connections/:uuid            YOUTH_USER
+POST   /api/v1/connections/:uuid/accept     YOUTH_USER
+DELETE /api/v1/connections/:uuid            YOUTH_USER
+
+GET    /api/v1/threads                      any authenticated role
+POST   /api/v1/threads                      any authenticated role
+GET    /api/v1/threads/contacts             any authenticated role
+GET    /api/v1/threads/:threadUuid/messages  any authenticated role
+POST   /api/v1/threads/:threadUuid/messages  any authenticated role
+PATCH  /api/v1/threads/:threadUuid/read      any authenticated role
 ```
 </details>
 
@@ -264,10 +295,6 @@ PATCH  /api/v1/notifications/:uuid/sent                     ADMINISTRATOR
 
 GET    /api/v1/integrations/status                                    ADMINISTRATOR, ANALYST
 POST   /api/v1/media/cloudinary/signature                              YOUTH_USER, EMPLOYER, ADMINISTRATOR
-POST   /api/v1/payments/transactions/:uuid/momo/request-to-pay          YOUTH_USER, EMPLOYER, ADMINISTRATOR
-GET    /api/v1/payments/transactions/:uuid/momo/status                  YOUTH_USER, EMPLOYER, ADMINISTRATOR
-POST   /api/v1/payments/transactions/:uuid/momo/disburse                 YOUTH_USER, EMPLOYER, ADMINISTRATOR
-GET    /api/v1/payments/transactions/:uuid/momo/disbursement-status       YOUTH_USER, EMPLOYER, ADMINISTRATOR
 
 GET    /api/v1/health                       PUBLIC
 ```

@@ -1,9 +1,5 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
-import { Prisma, Role, UserStatus, Visibility } from '@prisma/client';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { ConnectionStatus, Prisma, Role, UserStatus, Visibility } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const PEER_SELECT = {
@@ -25,6 +21,8 @@ const PEER_SELECT = {
 
 type Peer = Prisma.UserGetPayload<{ select: typeof PEER_SELECT }>;
 
+export type ConnectionState = 'NONE' | 'PENDING_SENT' | 'PENDING_RECEIVED' | 'ACCEPTED';
+
 export type PeerCard = {
   uuid: string;
   firstName: string;
@@ -36,12 +34,13 @@ export type PeerCard = {
   careerInterests: string[];
   languages: string[];
   location: string | null;
-  isConnected: boolean;
+  connectionState: ConnectionState;
 };
 
-/** Fellow-youth directory: browse, search, save-as-connection, and message
- * peers who've opted into PUBLIC profile visibility. Mirrors the same
- * visibility rule as messaging.service.ts's peer contacts. */
+/** Fellow-youth directory and request/accept connections. Browsing/searching
+ * only surfaces PUBLIC-visibility youth profiles, but messaging is gated on
+ * an ACCEPTED Connection row, not on visibility alone (see
+ * messaging.service.ts#computeContacts). */
 @Injectable()
 export class ConnectionsService {
   constructor(private readonly prisma: PrismaService) {}
@@ -55,15 +54,40 @@ export class ConnectionsService {
     return user;
   }
 
-  private async connectedUuids(userId: number): Promise<Set<string>> {
+  /** Every connection row touching this user, keyed by the *other* person's
+   * uuid, so a peer card can be shaped regardless of who requested whom. */
+  private async connectionsByPeerUuid(userId: number) {
     const rows = await this.prisma.connection.findMany({
-      where: { userId },
-      select: { connectedUser: { select: { uuid: true } } },
+      where: { OR: [{ userId }, { connectedUserId: userId }] },
+      select: {
+        userId: true,
+        connectedUserId: true,
+        status: true,
+        user: { select: { uuid: true } },
+        connectedUser: { select: { uuid: true } },
+      },
     });
-    return new Set(rows.map((row) => row.connectedUser.uuid));
+
+    const byPeerUuid = new Map<string, { status: ConnectionStatus; requestedByMe: boolean }>();
+    for (const row of rows) {
+      const requestedByMe = row.userId === userId;
+      const peerUuid = requestedByMe ? row.connectedUser.uuid : row.user.uuid;
+      byPeerUuid.set(peerUuid, { status: row.status, requestedByMe });
+    }
+    return byPeerUuid;
   }
 
-  private shapePeer(peer: Peer, connected: Set<string>, forceConnected = false): PeerCard {
+  private stateFor(
+    peerUuid: string,
+    connections: Map<string, { status: ConnectionStatus; requestedByMe: boolean }>,
+  ): ConnectionState {
+    const connection = connections.get(peerUuid);
+    if (!connection) return 'NONE';
+    if (connection.status === ConnectionStatus.ACCEPTED) return 'ACCEPTED';
+    return connection.requestedByMe ? 'PENDING_SENT' : 'PENDING_RECEIVED';
+  }
+
+  private shapePeer(peer: Peer, state: ConnectionState): PeerCard {
     return {
       uuid: peer.uuid,
       firstName: peer.firstName,
@@ -75,7 +99,7 @@ export class ConnectionsService {
       careerInterests: peer.profile?.careerInterests ?? [],
       languages: peer.profile?.languages ?? [],
       location: peer.profile?.location ?? null,
-      isConnected: forceConnected || connected.has(peer.uuid),
+      connectionState: state,
     };
   }
 
@@ -97,7 +121,7 @@ export class ConnectionsService {
         : {}),
     };
 
-    const [peers, total, connected] = await Promise.all([
+    const [peers, total, connections] = await Promise.all([
       this.prisma.user.findMany({
         where,
         select: PEER_SELECT,
@@ -106,24 +130,41 @@ export class ConnectionsService {
         take: limit,
       }),
       this.prisma.user.count({ where }),
-      this.connectedUuids(me.id),
+      this.connectionsByPeerUuid(me.id),
     ]);
 
     return {
-      items: peers.map((peer) => this.shapePeer(peer, connected)),
+      items: peers.map((peer) => this.shapePeer(peer, this.stateFor(peer.uuid, connections))),
       meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
     };
   }
 
+  /** Accepted connections only - this is the youth's "my network" list. */
   async myConnections(userUuid: string) {
     const me = await this.resolveUser(userUuid);
     const rows = await this.prisma.connection.findMany({
-      where: { userId: me.id },
-      orderBy: { createdAt: 'desc' },
-      select: { connectedUser: { select: PEER_SELECT } },
+      where: { status: ConnectionStatus.ACCEPTED, OR: [{ userId: me.id }, { connectedUserId: me.id }] },
+      orderBy: { respondedAt: 'desc' },
+      select: {
+        userId: true,
+        user: { select: PEER_SELECT },
+        connectedUser: { select: PEER_SELECT },
+      },
     });
 
-    return rows.map((row) => this.shapePeer(row.connectedUser, new Set(), true));
+    return rows.map((row) => this.shapePeer(row.userId === me.id ? row.connectedUser : row.user, 'ACCEPTED'));
+  }
+
+  /** Pending requests directed at me, waiting on my accept/reject. */
+  async pendingRequests(userUuid: string) {
+    const me = await this.resolveUser(userUuid);
+    const rows = await this.prisma.connection.findMany({
+      where: { connectedUserId: me.id, status: ConnectionStatus.PENDING },
+      orderBy: { createdAt: 'desc' },
+      select: { user: { select: PEER_SELECT } },
+    });
+
+    return rows.map((row) => this.shapePeer(row.user, 'PENDING_RECEIVED'));
   }
 
   async getProfile(userUuid: string, targetUuid: string) {
@@ -141,11 +182,14 @@ export class ConnectionsService {
       throw new NotFoundException('This profile is not available.');
     }
 
-    const connected = await this.connectedUuids(me.id);
-    return this.shapePeer(target, connected);
+    const connections = await this.connectionsByPeerUuid(me.id);
+    return this.shapePeer(target, this.stateFor(target.uuid, connections));
   }
 
-  async connect(userUuid: string, targetUuid: string) {
+  /** Sends a connect request. If the target already requested *me* (a
+   * reverse PENDING row exists), this accepts it instead of creating a
+   * second row - if both people click Connect, it's an instant match. */
+  async requestConnection(userUuid: string, targetUuid: string) {
     if (userUuid === targetUuid) {
       throw new BadRequestException('You cannot connect with yourself.');
     }
@@ -164,23 +208,70 @@ export class ConnectionsService {
       throw new NotFoundException('This person is not available to connect with.');
     }
 
+    const reverse = await this.prisma.connection.findUnique({
+      where: { userId_connectedUserId: { userId: target.id, connectedUserId: me.id } },
+    });
+
+    if (reverse) {
+      if (reverse.status === ConnectionStatus.PENDING) {
+        await this.prisma.connection.update({
+          where: { id: reverse.id },
+          data: { status: ConnectionStatus.ACCEPTED, respondedAt: new Date() },
+        });
+      }
+      return { connectionState: 'ACCEPTED' as const };
+    }
+
     await this.prisma.connection.upsert({
       where: { userId_connectedUserId: { userId: me.id, connectedUserId: target.id } },
       update: {},
       create: { userId: me.id, connectedUserId: target.id },
     });
 
-    return { connected: true };
+    return { connectionState: 'PENDING_SENT' as const };
   }
 
-  async disconnect(userUuid: string, targetUuid: string) {
+  async acceptRequest(userUuid: string, requesterUuid: string) {
     const me = await this.resolveUser(userUuid);
-    const target = await this.resolveUser(targetUuid);
+    const requester = await this.resolveUser(requesterUuid);
 
-    await this.prisma.connection.deleteMany({
-      where: { userId: me.id, connectedUserId: target.id },
+    const connection = await this.prisma.connection.findUnique({
+      where: { userId_connectedUserId: { userId: requester.id, connectedUserId: me.id } },
     });
 
-    return { connected: false };
+    if (!connection || connection.status !== ConnectionStatus.PENDING) {
+      throw new NotFoundException('No pending request from this person.');
+    }
+
+    await this.prisma.connection.update({
+      where: { id: connection.id },
+      data: { status: ConnectionStatus.ACCEPTED, respondedAt: new Date() },
+    });
+
+    return { connectionState: 'ACCEPTED' as const };
+  }
+
+  /** Rejects a pending request (deletes the row, freeing the pair up for a
+   * future request), cancels a request I sent, or removes an existing
+   * accepted connection - whichever applies to this (me, peer) pair. */
+  async removeConnection(userUuid: string, peerUuid: string) {
+    const me = await this.resolveUser(userUuid);
+    const peer = await this.resolveUser(peerUuid);
+
+    const connection = await this.prisma.connection.findFirst({
+      where: {
+        OR: [
+          { userId: me.id, connectedUserId: peer.id },
+          { userId: peer.id, connectedUserId: me.id },
+        ],
+      },
+    });
+
+    if (!connection) {
+      throw new NotFoundException('No connection with this person.');
+    }
+
+    await this.prisma.connection.delete({ where: { id: connection.id } });
+    return { connectionState: 'NONE' as const };
   }
 }

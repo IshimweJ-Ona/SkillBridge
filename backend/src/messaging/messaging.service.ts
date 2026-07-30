@@ -117,22 +117,30 @@ export class MessagingService {
         });
       }
 
-      const peers = await this.prisma.profile.findMany({
+      // Peer messaging is gated on an ACCEPTED Connect request (see
+      // connections.service.ts), not on profile visibility alone - two
+      // people have to mutually agree to connect before either can message
+      // the other.
+      const acceptedConnections = await this.prisma.connection.findMany({
         where: {
-          visibility: 'PUBLIC',
-          user: { id: { not: userId }, status: 'ACTIVE', role: Role.YOUTH_USER },
+          status: 'ACCEPTED',
+          OR: [{ userId }, { connectedUserId: userId }],
         },
-        select: { user: { select: USER_SELECT } },
-        take: 200,
+        select: {
+          userId: true,
+          user: { select: USER_SELECT },
+          connectedUser: { select: USER_SELECT },
+        },
       });
 
-      for (const peer of peers) {
-        if (contacts.has(peer.user.uuid)) continue;
-        contacts.set(peer.user.uuid, {
-          uuid: peer.user.uuid,
-          firstName: peer.user.firstName,
-          lastName: peer.user.lastName,
-          role: peer.user.role,
+      for (const connection of acceptedConnections) {
+        const peer = connection.userId === userId ? connection.connectedUser : connection.user;
+        if (contacts.has(peer.uuid)) continue;
+        contacts.set(peer.uuid, {
+          uuid: peer.uuid,
+          firstName: peer.firstName,
+          lastName: peer.lastName,
+          role: peer.role,
           companyName: null,
           context: 'Fellow youth on SkillBridge',
         });

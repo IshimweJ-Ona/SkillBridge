@@ -7,6 +7,10 @@ import { ProfilesService } from '../profiles/profiles.service';
 type ChallengeQuestion = {
   id?: string;
   prompt?: string;
+  // Multiple-choice options shown to the test-taker; `answer` is the correct
+  // option's index (as a string, e.g. "2") - never sent to the client, see
+  // stripAnswers() below.
+  options?: string[];
   answer?: string | number | boolean;
   points?: number;
 };
@@ -51,6 +55,7 @@ export class ChallengesService {
       status: query.includeDrafts === 'true' ? undefined : ChallengeStatus.PUBLISHED,
       sector: query.sector,
       skillCategory: query.skillCategory,
+      company: query.companyUuid ? { uuid: query.companyUuid } : undefined,
       OR: query.search
         ? [
             { title: { contains: query.search, mode: 'insensitive' } },
@@ -73,7 +78,7 @@ export class ChallengesService {
       this.prisma.skillChallenge.count({ where }),
     ]);
 
-    return { items, meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
+    return { items: items.map((item) => this.stripAnswers(item)), meta: { page, limit, total, totalPages: Math.ceil(total / limit) } };
   }
 
   async findChallenge(uuid: string) {
@@ -84,7 +89,25 @@ export class ChallengesService {
 
     if (!challenge) throw new NotFoundException(`Challenge ${uuid} was not found.`);
 
-    return challenge;
+    return this.stripAnswers(challenge);
+  }
+
+  // Both list/find are @Public() (or reachable pre-attempt by the youth
+  // taking the test) - the correct-answer key must never leave the server
+  // before grading. submitChallenge()/grade() below load the real
+  // `questions` (with answers) straight from the DB, never from anything
+  // the client already has, so stripping here can't break scoring.
+  private stripAnswers<T extends { questions: unknown }>(challenge: T): T {
+    const questions = Array.isArray(challenge.questions) ? (challenge.questions as ChallengeQuestion[]) : [];
+    return {
+      ...challenge,
+      questions: questions.map((question) => ({
+        id: question.id,
+        prompt: question.prompt,
+        options: question.options,
+        points: question.points,
+      })),
+    };
   }
 
   async startChallenge(challengeUuid: string, userUuid: string) {

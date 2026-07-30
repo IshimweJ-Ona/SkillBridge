@@ -884,21 +884,30 @@ model Message {
   @@map("messages")
 }
 
-// A youth user saving a fellow youth peer as a connection ("friend"). One
-// row per direction - saving someone doesn't require them to accept, it's a
-// personal contacts list, not a mutual request/accept relationship.
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+}
+
+// A youth user requesting to connect with a fellow youth peer. `userId` is
+// always the requester, `connectedUserId` the recipient - stays PENDING
+// until the recipient accepts (rejecting just deletes the row, freeing up
+// the pair for a future request). Only an ACCEPTED connection unlocks
+// messaging between the two (see messaging.service.ts#computeContacts).
 model Connection {
-  id              Int      @id @default(autoincrement())
-  uuid            String   @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  id              Int              @id @default(autoincrement())
+  uuid            String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId          Int
   connectedUserId Int
-  createdAt       DateTime @default(now())
+  status          ConnectionStatus @default(PENDING)
+  createdAt       DateTime         @default(now())
+  respondedAt     DateTime?
 
   user          User @relation("ConnectionsMade", fields: [userId], references: [id], onDelete: Cascade)
   connectedUser User @relation("ConnectionsReceived", fields: [connectedUserId], references: [id], onDelete: Cascade)
 
   @@unique([userId, connectedUserId])
-  @@index([connectedUserId])
+  @@index([connectedUserId, status])
   @@map("connections")
 }
 

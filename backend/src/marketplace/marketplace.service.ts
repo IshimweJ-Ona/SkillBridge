@@ -237,7 +237,7 @@ export class MarketplaceService {
           status: TransactionStatus.PENDING,
           amountCents: created.feeCents,
           currency: created.currency,
-          provider: 'mtn-momo',
+          provider: 'manual',
           metadata: { escrow: true },
         },
       });

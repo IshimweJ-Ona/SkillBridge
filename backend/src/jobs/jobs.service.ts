@@ -527,7 +527,7 @@ export class JobsService {
           status: TransactionStatus.PENDING,
           amountCents: this.numberValue(body.amountCents, 1_000_000),
           currency: 'RWF',
-          provider: 'mtn-momo',
+          provider: 'manual',
           metadata: { feeDescription: '10,000 RWF hiring fee invoice' },
         },
       });

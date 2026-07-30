@@ -25,6 +25,12 @@ export class ConnectionsController {
   }
 
   @Roles(Role.YOUTH_USER)
+  @Get('requests')
+  pendingRequests(@CurrentUser() user: RequestUser) {
+    return this.connectionsService.pendingRequests(user.sub);
+  }
+
+  @Roles(Role.YOUTH_USER)
   @Get()
   myConnections(@CurrentUser() user: RequestUser) {
     return this.connectionsService.myConnections(user.sub);
@@ -32,13 +38,19 @@ export class ConnectionsController {
 
   @Roles(Role.YOUTH_USER)
   @Post(':uuid')
-  connect(@CurrentUser() user: RequestUser, @Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.connectionsService.connect(user.sub, uuid);
+  requestConnection(@CurrentUser() user: RequestUser, @Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return this.connectionsService.requestConnection(user.sub, uuid);
+  }
+
+  @Roles(Role.YOUTH_USER)
+  @Post(':uuid/accept')
+  acceptRequest(@CurrentUser() user: RequestUser, @Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return this.connectionsService.acceptRequest(user.sub, uuid);
   }
 
   @Roles(Role.YOUTH_USER)
   @Delete(':uuid')
-  disconnect(@CurrentUser() user: RequestUser, @Param('uuid', new ParseUUIDPipe()) uuid: string) {
-    return this.connectionsService.disconnect(user.sub, uuid);
+  removeConnection(@CurrentUser() user: RequestUser, @Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return this.connectionsService.removeConnection(user.sub, uuid);
   }
 }
