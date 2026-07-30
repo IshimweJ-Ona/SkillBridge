@@ -1,61 +1,35 @@
 // One-off ops script - run with `npx ts-node create-employer.ts` from
-// backend/, pointed at whichever DATABASE_URL you want to write to. Add as
-// many entries to EMPLOYERS as you need; existing emails are skipped, never
-// overwritten. Each entry also claims (or creates) a Company by name, so this
-// pairs with prisma/seed.prod.ts's 4 real companies - run that first and
-// these accounts become the real logins for Andela/Zipline/Ampersand/Bank of
-// Kigali, the same companies already attributed to the Learning Hub
-// challenges.
+// backend/, pointed at whichever DATABASE_URL you want to write to. Fill in
+// real entries locally before running (never commit real emails/passwords
+// here - this file must stay empty in git). Existing emails are skipped,
+// never overwritten. Each entry also claims (or creates) a Company by name.
 import { CompanyStatus, PrismaClient, Role, SubscriptionPlan, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const EMPLOYERS = [
-  {
-    email: 'hr@andela.com',
-    password: 'Employer@123',
-    firstName: 'Aline',
-    lastName: 'Mukamana',
-    companyName: 'Andela',
-    companyDomain: 'andela.com',
-    sector: 'Software Development',
-    location: 'Kigali, Rwanda',
-    description: 'A global talent network connecting African tech talent with remote engineering roles.',
-  },
-  {
-    email: 'hr@flyzipline.com',
-    password: 'Employer@123',
-    firstName: 'Eric',
-    lastName: 'Nsengimana',
-    companyName: 'Zipline',
-    companyDomain: 'flyzipline.com',
-    sector: 'Logistics',
-    location: 'Muhanga, Rwanda',
-    description: 'Drone logistics company delivering medical supplies across Rwanda and beyond.',
-  },
-  {
-    email: 'hr@ampersand.co',
-    password: 'Employer@123',
-    firstName: 'Grace',
-    lastName: 'Ingabire',
-    companyName: 'Ampersand',
-    companyDomain: 'ampersand.co',
-    sector: 'Clean Energy',
-    location: 'Kigali, Rwanda',
-    description: "East Africa's leading electric motorcycle company, building local manufacturing and battery-swap infrastructure.",
-  },
-  {
-    email: 'hr@bk.rw',
-    password: 'Employer@123',
-    firstName: 'Patrick',
-    lastName: 'Niyonzima',
-    companyName: 'Bank of Kigali',
-    companyDomain: 'bk.rw',
-    sector: 'Financial Services',
-    location: 'Kigali, Rwanda',
-    description: "Rwanda's largest commercial bank, offering retail, corporate, and digital banking services.",
-  },
+const EMPLOYERS: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  companyName: string;
+  companyDomain: string;
+  sector: string;
+  location: string;
+  description: string;
+}[] = [
+  // {
+  //   email: 'hr@example.com',
+  //   password: 'ChangeMe@123',
+  //   firstName: 'First',
+  //   lastName: 'Last',
+  //   companyName: 'Example Co',
+  //   companyDomain: 'example.com',
+  //   sector: 'Software Development',
+  //   location: 'Kigali, Rwanda',
+  //   description: 'What this company does.',
+  // },
 ];
 
 async function main() {

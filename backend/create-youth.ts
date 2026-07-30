@@ -1,23 +1,32 @@
 // One-off ops script - run with `npx ts-node create-youth.ts` from backend/,
-// pointed at whichever DATABASE_URL you want to write to. Add as many entries
-// to YOUTH as you need; existing emails are skipped, never overwritten. Each
-// account also gets a PUBLIC profile so it shows up on the Connect directory
-// and in job applications right away.
+// pointed at whichever DATABASE_URL you want to write to. Fill in real
+// entries locally before running (never commit real emails/passwords here -
+// this file must stay empty in git). Existing emails are skipped, never
+// overwritten. Each account also gets a PUBLIC profile so it shows up on
+// the Connect directory and in job applications right away.
 import { PrismaClient, Role, UserStatus, Visibility } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const YOUTH = [
-  {
-    email: 'youth1@example.com',
-    password: 'SkillBridge@123',
-    firstName: 'Eric',
-    lastName: 'Habimana',
-    location: 'Kigali, Rwanda',
-    headline: 'Backend Developer',
-    skills: ['Node.js', 'PostgreSQL', 'Python'],
-  },
+const YOUTH: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName: string;
+  location: string;
+  headline: string;
+  skills: string[];
+}[] = [
+  // {
+  //   email: 'name@example.com',
+  //   password: 'ChangeMe@123',
+  //   firstName: 'First',
+  //   lastName: 'Last',
+  //   location: 'Kigali, Rwanda',
+  //   headline: 'Backend Developer',
+  //   skills: ['Node.js', 'PostgreSQL'],
+  // },
 ];
 
 async function main() {

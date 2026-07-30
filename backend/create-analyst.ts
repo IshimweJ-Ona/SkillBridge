@@ -1,13 +1,15 @@
 // One-off ops script - run with `npx ts-node create-analyst.ts` from backend/,
-// pointed at whichever DATABASE_URL you want to write to. Add as many entries
-// to ANALYSTS as you need; existing emails are skipped, never overwritten.
+// pointed at whichever DATABASE_URL you want to write to. Fill in real
+// entries locally before running (never commit real emails/passwords here -
+// this file must stay empty in git). Existing emails are skipped, never
+// overwritten.
 import { PrismaClient, Role, UserStatus } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
-const ANALYSTS = [
-  { email: 'authapp05@gmail.com', password: 'JIJIko@098', firstName: 'Jona', lastName: 'Dev' },
+const ANALYSTS: { email: string; password: string; firstName: string; lastName: string }[] = [
+  // { email: 'name@example.com', password: 'ChangeMe@123', firstName: 'First', lastName: 'Last' },
 ];
 
 async function main() {
