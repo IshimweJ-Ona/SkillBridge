@@ -1,6 +1,6 @@
 # Deploying SkillBridge
 
-The actual, current, known-working runbook for this deployment. Infra:
+This file only applies to the `main` branch (production) — see the root [`README.md`](README.md#repository-branches) for what the other three branches (`test`, `backend`, `frontend`) are for. The actual, current, known-working runbook for this deployment. Infra:
 
 ```text
 6725-lb-01     HAProxy load balancer, TLS termination (www.jonaintra.tech),
@@ -178,5 +178,5 @@ Then load `https://www.jonaintra.tech/skillbridge/` in a real browser.
 - [ ] `DATABASE_URL` uses `sslmode=require` and real Neon credentials.
 - [ ] `CORS_ORIGIN` / `APP_BASE_URL` / `PASSWORD_RESET_URL` use `https://www.jonaintra.tech`, not `localhost` or the bare apex domain.
 - [ ] `RESEND_FROM_EMAIL` is on a domain verified in Resend, not `@gmail.com`.
-- [ ] `MOMO_CALLBACK_HOST` and `GOOGLE_REDIRECT_URI` (in `backend/.env`) are real public HTTPS URLs, registered wherever those providers require it.
+- [ ] `GOOGLE_REDIRECT_URI` (in `backend/.env`) is a real public HTTPS URL, registered with Google's OAuth console.
 - [ ] `backend/.env` and the root `.env` are not committed to git and are readable only by the deploy user.
