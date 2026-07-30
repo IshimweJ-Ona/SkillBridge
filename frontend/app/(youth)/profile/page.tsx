@@ -1,14 +1,17 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { Award, Loader2, UserRound } from "lucide-react";
+import { Award, Loader2 } from "@/lib/icons";
+import { UndrawAccount } from "react-undraw-illustrations";
 import { AutosaveIndicator } from "@/components/ui/autosave-indicator";
+import { AvatarUpload } from "@/components/ui/avatar-upload";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FileUpload } from "@/components/ui/file-upload";
 import { Input, Textarea } from "@/components/ui/input";
+import { LinkButton } from "@/components/ui/link-button";
 import { ScoreGauge } from "@/components/ui/score-gauge";
 import { TagInput } from "@/components/ui/tag-input";
 import { useToast } from "@/components/ui/toast";
@@ -21,10 +24,26 @@ import { validatePassword } from "@/lib/validation";
 
 type TabKey = "overview" | "skills" | "portfolio" | "settings";
 
+// Must mirror the backend's UpdateProfileDto exactly (backend/src/profiles/
+// dto/update-profile.dto.ts) - the API runs with forbidNonWhitelisted, so
+// any field here that isn't declared there 400s the whole save, and any
+// field the DTO accepts but this list omits silently never gets persisted.
+const EDITABLE_PROFILE_FIELDS = [
+  "avatarUrl",
+  "headline",
+  "bio",
+  "location",
+  "skills",
+  "careerInterests",
+  "languages",
+  "educationLevel",
+  "portfolioUrl",
+  "cvUrl",
+] as const satisfies readonly (keyof Profile)[];
+
 function ProfilePageContent() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { show } = useToast();
   const t = useTranslations();
 
@@ -35,7 +54,13 @@ function ProfilePageContent() {
     { key: "settings", label: t("profile.tabSettings") },
   ];
 
-  const activeTab = (searchParams.get("tab") as TabKey) ?? "overview";
+  // Local state, not derived from useSearchParams() on every render - only
+  // read the URL once, on mount, for deep-linking (e.g. nav-config's
+  // "/profile?tab=settings"). Switching tabs afterward must never go through
+  // router.push/replace: in the App Router, that triggers a real
+  // navigation/server round-trip even for a same-page query-param change,
+  // which is exactly what made tab switches feel like they were "hanging."
+  const [activeTab, setActiveTab] = useState<TabKey>(() => (searchParams.get("tab") as TabKey) ?? "overview");
   const [profile, setProfile] = useState<Profile | null | undefined>(undefined);
   const [form, setForm] = useState<Partial<Profile>>({});
 
@@ -55,13 +80,29 @@ function ProfilePageContent() {
   }, [user]);
 
   const setTab = (tab: TabKey) => {
-    router.push(`/profile?tab=${tab}`);
+    setActiveTab(tab);
+    // Reflect the tab in the URL for reload/share, via the native History
+    // API directly - not router.replace(), which still routes through
+    // Next's navigation machinery and reintroduces the same lag.
+    window.history.replaceState(null, "", `/profile?tab=${tab}`);
   };
 
   const save = useCallback(
     async (value: Partial<Profile>) => {
       if (!profile || !user) return;
-      const updated = await profiles.update(profile.uuid, value);
+      // `value` is the full `form` state, which was seeded from the
+      // complete Profile the API returned (setForm(result) below) -
+      // including server-computed fields like uuid/brandScore/
+      // profileCompleteness/verifiedBadgeCount/endorsementCount that
+      // UpdateProfileDto doesn't declare. The backend's ValidationPipe runs
+      // with forbidNonWhitelisted: true, so forwarding those extra fields
+      // makes every save 400 - silently or as "Save failed - Retry". Only
+      // the fields the update endpoint actually accepts may be sent.
+      const payload: Partial<Profile> = {};
+      for (const field of EDITABLE_PROFILE_FIELDS) {
+        if (field in value) (payload as Record<string, unknown>)[field] = value[field];
+      }
+      const updated = await profiles.update(profile.uuid, payload);
       setProfile(updated);
     },
     [profile, user],
@@ -95,7 +136,7 @@ function ProfilePageContent() {
   if (profile === null) {
     return (
       <Card className="mx-auto max-w-lg p-6">
-        <EmptyState icon={UserRound} title={t("profile.buildTitle")} description={t("profile.buildDescription")} />
+        <EmptyState illustration={UndrawAccount} title={t("profile.buildTitle")} description={t("profile.buildDescription")} />
         <div className="mt-4 space-y-3">
           <Input
             label={t("profile.headline")}
@@ -120,6 +161,18 @@ function ProfilePageContent() {
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr]">
       <Card className="h-fit p-5 text-center">
         <div className="flex justify-center">
+          <AvatarUpload
+            firstName={user?.firstName ?? ""}
+            lastName={user?.lastName ?? ""}
+            imageUrl={form.avatarUrl}
+            onChange={(url) => {
+              const next = { ...form, avatarUrl: url };
+              setForm(next);
+              saveNow(next);
+            }}
+          />
+        </div>
+        <div className="mt-4 flex justify-center">
           <ScoreGauge value={profile.brandScore} label={t("profile.brandScore")} size={100} />
         </div>
         <h2 className="mt-3 text-sm font-semibold">{user.firstName} {user.lastName}</h2>
@@ -166,42 +219,44 @@ function ProfilePageContent() {
                 label={t("profile.headline")}
                 value={form.headline ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, headline: e.target.value }))}
-                onBlur={saveNow}
+                onBlur={() => saveNow()}
               />
               <Textarea
                 label={t("profile.aboutMe")}
                 value={form.bio ?? ""}
                 onChange={(e) => setForm((f) => ({ ...f, bio: e.target.value }))}
-                onBlur={saveNow}
+                onBlur={() => saveNow()}
               />
               <div className="grid grid-cols-2 gap-3">
                 <Input
                   label={t("profile.location")}
                   value={form.location ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, location: e.target.value }))}
-                  onBlur={saveNow}
+                  onBlur={() => saveNow()}
                 />
                 <Input
                   label={t("profile.educationLevel")}
                   value={form.educationLevel ?? ""}
                   onChange={(e) => setForm((f) => ({ ...f, educationLevel: e.target.value }))}
-                  onBlur={saveNow}
+                  onBlur={() => saveNow()}
                 />
               </div>
               <TagInput
                 label={t("profile.careerInterests")}
                 values={form.careerInterests ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, careerInterests: values }));
-                  saveNow();
+                  const next = { ...form, careerInterests: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
               />
               <TagInput
                 label={t("profile.languages")}
                 values={form.languages ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, languages: values }));
-                  saveNow();
+                  const next = { ...form, languages: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
               />
             </CardContent>
@@ -218,12 +273,16 @@ function ProfilePageContent() {
                 label={t("profile.yourSkills")}
                 values={form.skills ?? []}
                 onChange={(values) => {
-                  setForm((f) => ({ ...f, skills: values }));
-                  saveNow();
+                  const next = { ...form, skills: values };
+                  setForm(next);
+                  saveNow(next);
                 }}
                 placeholder="e.g. React.js"
               />
               <p className="mt-3 text-xs text-[var(--sb-text-faint)]">{t("profile.skillsHint")}</p>
+              <LinkButton href="/skills-badges" variant="secondary" size="sm" className="mt-4">
+                <Award size={14} className="mr-1.5" /> {t("profile.viewSkillsBadges")}
+              </LinkButton>
             </CardContent>
           </Card>
         )}
@@ -234,23 +293,21 @@ function ProfilePageContent() {
               <CardTitle>{t("profile.portfolioTitle")}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <FileUpload
+              <Input
                 label={t("profile.portfolio")}
+                placeholder="https://your-portfolio-site.com"
                 value={form.portfolioUrl ?? ""}
-                onChange={(url) => {
-                  setForm((f) => ({ ...f, portfolioUrl: url }));
-                  saveNow();
-                }}
-                folder="skillbridge/portfolios"
-                accept="image/*,.pdf"
+                onChange={(e) => setForm((f) => ({ ...f, portfolioUrl: e.target.value }))}
+                onBlur={() => saveNow()}
                 hint={t("profile.portfolioHint")}
               />
               <FileUpload
                 label={t("profile.cv")}
                 value={form.cvUrl ?? ""}
                 onChange={(url) => {
-                  setForm((f) => ({ ...f, cvUrl: url }));
-                  saveNow();
+                  const next = { ...form, cvUrl: url };
+                  setForm(next);
+                  saveNow(next);
                 }}
                 folder="skillbridge/cvs"
                 accept=".pdf,.doc,.docx"

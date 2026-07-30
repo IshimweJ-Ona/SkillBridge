@@ -1,8 +1,9 @@
 "use client";
 
-import { Clock, GraduationCap, Search } from "lucide-react";
+import { Clock, Search } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UndrawGraduation } from "react-undraw-illustrations";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
@@ -58,7 +59,7 @@ export default function LearningHubPage() {
         {loading && Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-40 w-full" />)}
         {!loading && items.length === 0 && (
           <div className="sm:col-span-2">
-            <EmptyState icon={GraduationCap} title={t("learningHub.noChallengesTitle")} description={t("learningHub.noChallengesDescription")} />
+            <EmptyState illustration={UndrawGraduation} title={t("learningHub.noChallengesTitle")} description={t("learningHub.noChallengesDescription")} />
           </div>
         )}
         {!loading &&

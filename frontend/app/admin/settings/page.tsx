@@ -1,6 +1,6 @@
 "use client";
 
-import { Archive, CheckCircle2, XCircle } from "lucide-react";
+import { Archive, CheckCircle2, XCircle } from "@/lib/icons";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -49,9 +49,8 @@ export default function AdminSettingsPage() {
           {!status ? (
             <p className="text-xs text-[var(--sb-text-muted)]">{t("common.loading")}</p>
           ) : (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <IntegrationRow label={t("admin.settings.emailLabel")} configured={status.resendConfigured} detail={status.emailProvider} t={t} />
-              <IntegrationRow label={t("admin.settings.paymentsLabel")} configured={status.mtnMomoSandboxConfigured} detail={status.paymentProvider} t={t} />
               <IntegrationRow label={t("admin.settings.mediaLabel")} configured={status.cloudinaryConfigured} detail={status.mediaProvider} t={t} />
             </div>
           )}

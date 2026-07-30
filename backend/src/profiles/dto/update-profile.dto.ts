@@ -9,6 +9,10 @@ import {
 
 export class UpdateProfileDto {
   @IsOptional()
+  @IsUrl()
+  avatarUrl?: string;
+
+  @IsOptional()
   @IsString()
   headline?: string;
 

@@ -1,5 +1,6 @@
 import { USE_MOCK_API } from "./config";
 import { authApi as authApiReal } from "./real/auth";
+import { connectionsApi as connectionsApiReal } from "./real/connections";
 import { profilesApi as profilesApiReal } from "./real/profiles";
 import { jobsApi as jobsApiReal } from "./real/jobs";
 import { companiesApi as companiesApiReal } from "./real/companies";
@@ -11,7 +12,9 @@ import { feedbackApi as feedbackApiReal } from "./real/feedback";
 import { usersApi as usersApiReal } from "./real/users";
 import { integrationsApi as integrationsApiReal } from "./real/integrations";
 import { mediaApi as mediaApiReal } from "./real/media";
+import { messagesApi as messagesApiReal } from "./real/messages";
 import { authApiMock } from "./mock/auth";
+import { connectionsApiMock } from "./mock/connections";
 import { profilesApiMock } from "./mock/profiles";
 import { jobsApiMock } from "./mock/jobs";
 import { companiesApiMock } from "./mock/companies";
@@ -23,8 +26,10 @@ import { feedbackApiMock } from "./mock/feedback";
 import { usersApiMock } from "./mock/users";
 import { integrationsApiMock } from "./mock/integrations";
 import { mediaApiMock } from "./mock/media";
+import { messagesApiMock } from "./mock/messages";
 
 export const auth = USE_MOCK_API ? authApiMock : authApiReal;
+export const connections = USE_MOCK_API ? connectionsApiMock : connectionsApiReal;
 export const profiles = USE_MOCK_API ? profilesApiMock : profilesApiReal;
 export const jobs = USE_MOCK_API ? jobsApiMock : jobsApiReal;
 export const companies = USE_MOCK_API ? companiesApiMock : companiesApiReal;
@@ -36,6 +41,7 @@ export const feedback = USE_MOCK_API ? feedbackApiMock : feedbackApiReal;
 export const users = USE_MOCK_API ? usersApiMock : usersApiReal;
 export const integrations = USE_MOCK_API ? integrationsApiMock : integrationsApiReal;
 export const media = USE_MOCK_API ? mediaApiMock : mediaApiReal;
+export const messages = USE_MOCK_API ? messagesApiMock : messagesApiReal;
 
 export { API_BASES, USE_MOCK_API } from "./config";
 export * from "./types";

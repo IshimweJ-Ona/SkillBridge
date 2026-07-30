@@ -1,7 +1,8 @@
 "use client";
 
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search, SlidersHorizontal } from "@/lib/icons";
 import { useEffect, useState } from "react";
+import { UndrawJobHunt } from "react-undraw-illustrations";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,7 +61,7 @@ export default function JobsPage() {
         {loading &&
           Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-24 w-full" />)}
         {!loading && items.length === 0 && (
-          <EmptyState icon={Search} title={t("jobs.noJobsTitle")} description={t("jobs.noJobsDescription")} />
+          <EmptyState illustration={UndrawJobHunt} title={t("jobs.noJobsTitle")} description={t("jobs.noJobsDescription")} />
         )}
         {!loading && items.map((job) => <JobCard key={job.uuid} job={job} />)}
       </div>

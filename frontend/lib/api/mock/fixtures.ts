@@ -2,6 +2,7 @@ import type {
   AppNotification,
   AuditLogEntry,
   ChallengeSubmission,
+  ChatMessage,
   Company,
   EarningsSummary,
   Feedback,
@@ -9,6 +10,7 @@ import type {
   JobApplication,
   JobMatch,
   JobPosting,
+  MessageThread,
   Profile,
   ReportExport,
   ServiceContract,
@@ -18,9 +20,19 @@ import type {
   Subscription,
   User,
 } from "../types";
+import type { ChallengeQuestionInput } from "../real/challenges";
 
 export interface MockUser extends User {
   password: string;
+}
+
+// Mirrors backend/prisma/schema.prisma's Connection model: `requesterUuid`
+// sent the request, `recipientUuid` accepts/rejects it. PENDING until
+// accepted - rejecting just removes the row (see connections.ts mock).
+export interface MockConnection {
+  requesterUuid: string;
+  recipientUuid: string;
+  status: "PENDING" | "ACCEPTED";
 }
 
 export interface MockDb {
@@ -35,7 +47,7 @@ export interface MockDb {
   jobMatches: (JobMatch & { userUuid: string })[];
   applications: (JobApplication & { userUuid: string })[];
   challenges: SkillChallenge[];
-  submissions: (ChallengeSubmission & { userUuid: string })[];
+  submissions: (ChallengeSubmission & { userUuid: string; fullQuestions?: ChallengeQuestionInput[] })[];
   badges: (SkillBadge & { userUuid: string })[];
   notifications: (AppNotification & { userUuid: string })[];
   earnings: Record<string, EarningsSummary>;
@@ -45,6 +57,13 @@ export interface MockDb {
   listings: (FreelanceListing & { ownerUuid: string })[];
   serviceRequests: (ServiceRequest & { requesterUuid?: string })[];
   contracts: (ServiceContract & { freelancerUuid: string; clientUuid?: string })[];
+  // Messaging starts empty for every account - no seeded/fake conversations.
+  // Threads and messages are only ever created by real user action.
+  messageThreads: MessageThread[];
+  chatMessages: ChatMessage[];
+  // Connect directory - request/accept connections between youth peers.
+  // Starts empty; every row is created by a real Connect button click.
+  connections: MockConnection[];
 }
 
 const DEMO_YOUTH_UUID = "10000000-0000-4000-8000-000000000001";
@@ -400,6 +419,7 @@ function auditLogSeed(): AuditLogEntry[] {
       action: "STATUS_CHANGE",
       entityType: "JobApplication",
       details: { status: "SHORTLISTED" },
+      ipAddress: "41.186.100.42",
       createdAt: new Date(Date.now() - 2 * 3_600_000).toISOString(),
       actor: { firstName: "Aline", lastName: "Mukamana", role: "EMPLOYER" },
     },
@@ -408,6 +428,7 @@ function auditLogSeed(): AuditLogEntry[] {
       action: "CREATE",
       entityType: "Company",
       details: { name: "Tech Solutions Ltd" },
+      ipAddress: "41.186.100.42",
       createdAt: new Date(Date.now() - 90 * 86_400_000).toISOString(),
       actor: { firstName: "Aline", lastName: "Mukamana", role: "EMPLOYER" },
     },
@@ -416,10 +437,130 @@ function auditLogSeed(): AuditLogEntry[] {
       action: "LOGIN",
       entityType: "User",
       details: {},
+      ipAddress: "102.89.44.17",
       createdAt: new Date(Date.now() - 30 * 60_000).toISOString(),
       actor: { firstName: "Jonathan", lastName: "Ishimwe", role: "YOUTH_USER" },
     },
   ];
+}
+
+// Fellow youth on the Connect directory - real seed peers (not the signed-in
+// demo user) so the directory, search, and peer messaging have something to
+// show in mock/demo mode. One is PRIVATE to demonstrate that opted-out
+// profiles never surface to other youth.
+function youthPeers(): MockUser[] {
+  const peers: Array<{
+    uuid: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    location: string;
+    headline: string;
+    bio: string;
+    skills: string[];
+    careerInterests: string[];
+    languages: string[];
+    visibility: Profile["visibility"];
+  }> = [
+    {
+      uuid: "11000000-0000-4000-8000-000000000001",
+      firstName: "Eric",
+      lastName: "Habimana",
+      email: "eric.habimana@example.com",
+      location: "Kigali, Rwanda",
+      headline: "Backend Developer",
+      bio: "Building reliable APIs and services with Node.js and PostgreSQL.",
+      skills: ["Node.js", "PostgreSQL", "Python"],
+      careerInterests: ["Backend Engineering", "Cloud Infrastructure"],
+      languages: ["English", "Kinyarwanda"],
+      visibility: "PUBLIC",
+    },
+    {
+      uuid: "11000000-0000-4000-8000-000000000002",
+      firstName: "Grace",
+      lastName: "Ingabire",
+      email: "grace.ingabire@example.com",
+      location: "Kigali, Rwanda",
+      headline: "Data Analyst",
+      bio: "Turning raw data into decisions - dashboards, SQL, and a bit of storytelling.",
+      skills: ["Python", "SQL", "Excel"],
+      careerInterests: ["Data Analytics", "Business Intelligence"],
+      languages: ["English", "Kinyarwanda", "French"],
+      visibility: "PUBLIC",
+    },
+    {
+      uuid: "11000000-0000-4000-8000-000000000003",
+      firstName: "Diane",
+      lastName: "Mutesi",
+      email: "diane.mutesi@example.com",
+      location: "Huye, Rwanda",
+      headline: "Digital Marketer",
+      bio: "Helping small businesses grow their reach through content and social media.",
+      skills: ["SEO", "Content Writing", "Social Media"],
+      careerInterests: ["Digital Marketing", "Brand Strategy"],
+      languages: ["English", "Kinyarwanda"],
+      visibility: "PUBLIC",
+    },
+    {
+      uuid: "11000000-0000-4000-8000-000000000004",
+      firstName: "Samuel",
+      lastName: "Twagirayezu",
+      email: "samuel.twagirayezu@example.com",
+      location: "Musanze, Rwanda",
+      headline: "Mobile App Developer",
+      bio: "React Native developer shipping apps for local businesses.",
+      skills: ["React Native", "TypeScript", "Kotlin"],
+      careerInterests: ["Mobile Engineering"],
+      languages: ["English", "Kinyarwanda"],
+      visibility: "PUBLIC",
+    },
+    {
+      uuid: "11000000-0000-4000-8000-000000000005",
+      firstName: "Patrick",
+      lastName: "Niyonzima",
+      email: "patrick.niyonzima@example.com",
+      location: "Kigali, Rwanda",
+      headline: "UI/UX Designer",
+      bio: "Prefers to keep a lower profile - opted out of the peer directory.",
+      skills: ["Figma", "UI/UX Design"],
+      careerInterests: ["Product Design"],
+      languages: ["English"],
+      visibility: "PRIVATE",
+    },
+  ];
+
+  return peers.map((peer) => ({
+    uuid: peer.uuid,
+    email: peer.email,
+    phone: null,
+    firstName: peer.firstName,
+    lastName: peer.lastName,
+    location: peer.location,
+    role: "YOUTH_USER",
+    status: "ACTIVE",
+    createdAt: new Date(Date.now() - 45 * 86_400_000).toISOString(),
+    updatedAt: new Date().toISOString(),
+    profile: {
+      uuid: crypto.randomUUID(),
+      avatarUrl: null,
+      headline: peer.headline,
+      bio: peer.bio,
+      location: peer.location,
+      skills: peer.skills,
+      careerInterests: peer.careerInterests,
+      languages: peer.languages,
+      educationLevel: null,
+      portfolioUrl: null,
+      cvUrl: null,
+      visibility: peer.visibility,
+      profileCompleteness: 75,
+      verifiedBadgeCount: 0,
+      endorsementCount: 0,
+      brandScore: 60,
+    },
+    subscription: freeSubscription(),
+    password: "SkillBridge@123",
+  }));
 }
 
 function listingsSeed(): (FreelanceListing & { ownerUuid: string })[] {
@@ -523,7 +664,7 @@ export function createSeedDb(): MockDb {
   };
 
   return {
-    users: [demoUser, demoEmployer, demoAnalyst, demoAdmin],
+    users: [demoUser, demoEmployer, demoAnalyst, demoAdmin, ...youthPeers()],
     sessionUuid: null,
     pendingOtp: {},
     pendingReset: {},
@@ -553,6 +694,9 @@ export function createSeedDb(): MockDb {
     listings: listingsSeed(),
     serviceRequests: [],
     contracts: [],
+    messageThreads: [],
+    chatMessages: [],
+    connections: [],
   };
 }
 

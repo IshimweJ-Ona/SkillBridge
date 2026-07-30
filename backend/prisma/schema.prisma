@@ -84,6 +84,9 @@ enum ChallengeSubmissionStatus {
   GRADED
   REVIEW_REQUIRED
   EXPIRED
+  // Auto-failed for losing tab focus mid-test (see ChallengesService#failIntegrity) - distinct from
+  // EXPIRED (ran out of time fairly) so the UI can explain why this attempt failed.
+  INTEGRITY_FAILED
 }
 
 enum BadgeStatus {
@@ -242,6 +245,11 @@ model User {
   passwordResetTokens   PasswordResetToken[]
   refreshTokens         RefreshToken[]
   consents              UserConsent[]
+  conversationsAsOne    Conversation[] @relation("ConversationParticipantOne")
+  conversationsAsTwo    Conversation[] @relation("ConversationParticipantTwo")
+  messagesSent          Message[]
+  connectionsMade       Connection[] @relation("ConnectionsMade")
+  connectionsReceived   Connection[] @relation("ConnectionsReceived")
 
   @@index([role, status])
   @@index([status, deletionScheduledAt])
@@ -253,6 +261,7 @@ model Profile {
   id             Int        @id @default(autoincrement())
   uuid           String     @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   userId         Int        @unique
+  avatarUrl      String?
   headline       String?
   bio            String?
   location       String?
@@ -401,6 +410,10 @@ model ChallengeSubmission {
   autoSavedAt DateTime?
   submittedAt DateTime?
   gradedAt    DateTime?
+  // Set when this attempt is auto-failed for losing tab focus mid-test
+  // (see ChallengesService#failIntegrity). While in the future, startChallenge
+  // refuses to create a new attempt on this same (user, challenge) pair.
+  lockedUntil DateTime?
   createdAt   DateTime                  @default(now())
   updatedAt   DateTime                  @updatedAt
 
@@ -828,6 +841,74 @@ model RefreshToken {
   @@index([userId, expiresAt])
   @@index([revokedAt, expiresAt])
   @@map("refresh_tokens")
+}
+
+model Conversation {
+  id               Int       @id @default(autoincrement())
+  uuid             String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  // Always stored with participantOneId < participantTwoId so a pair of
+  // users maps to exactly one conversation regardless of who started it.
+  participantOneId Int
+  participantTwoId Int
+  // Job title the conversation was started from (e.g. an applicant messaging
+  // the employer they applied to) - frozen at creation time for context.
+  contextJobTitle  String?
+  lastMessageAt    DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  participantOne User      @relation("ConversationParticipantOne", fields: [participantOneId], references: [id], onDelete: Cascade)
+  participantTwo User      @relation("ConversationParticipantTwo", fields: [participantTwoId], references: [id], onDelete: Cascade)
+  messages       Message[]
+
+  @@unique([participantOneId, participantTwoId])
+  @@index([participantOneId, lastMessageAt])
+  @@index([participantTwoId, lastMessageAt])
+  @@map("conversations")
+}
+
+model Message {
+  id             Int       @id @default(autoincrement())
+  uuid           String    @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  conversationId Int
+  senderId       Int
+  body           String
+  readAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("messages")
+}
+
+enum ConnectionStatus {
+  PENDING
+  ACCEPTED
+}
+
+// A youth user requesting to connect with a fellow youth peer. `userId` is
+// always the requester, `connectedUserId` the recipient - stays PENDING
+// until the recipient accepts (rejecting just deletes the row, freeing up
+// the pair for a future request). Only an ACCEPTED connection unlocks
+// messaging between the two (see messaging.service.ts#computeContacts).
+model Connection {
+  id              Int              @id @default(autoincrement())
+  uuid            String           @unique @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId          Int
+  connectedUserId Int
+  status          ConnectionStatus @default(PENDING)
+  createdAt       DateTime         @default(now())
+  respondedAt     DateTime?
+
+  user          User @relation("ConnectionsMade", fields: [userId], references: [id], onDelete: Cascade)
+  connectedUser User @relation("ConnectionsReceived", fields: [connectedUserId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, connectedUserId])
+  @@index([connectedUserId, status])
+  @@map("connections")
 }
 
 model UserConsent {

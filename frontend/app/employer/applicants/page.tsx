@@ -1,9 +1,9 @@
 "use client";
 
-import { Users } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { UndrawTeam } from "react-undraw-illustrations";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { ApplicationStatusPill } from "@/components/ui/status-pill";
@@ -66,7 +66,7 @@ function ApplicantsContent() {
       <div className="space-y-3">
         {items === null && Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-16 w-full" />)}
         {items !== null && filtered.length === 0 && (
-          <EmptyState icon={Users} title={t("employer.applicants.noApplicantsTitle")} description={t("employer.applicants.noApplicantsDescription")} />
+          <EmptyState illustration={UndrawTeam} title={t("employer.applicants.noApplicantsTitle")} description={t("employer.applicants.noApplicantsDescription")} />
         )}
         {items !== null &&
           filtered.map((application) => (
@@ -74,7 +74,13 @@ function ApplicantsContent() {
               <Card className="flex items-center justify-between gap-3 p-4 transition-colors hover:border-[var(--sb-border-strong)]">
                 <div className="flex items-center gap-3">
                   {application.user && (
-                    <Avatar firstName={application.user.firstName} lastName={application.user.lastName} size={36} />
+                    <Avatar
+                      firstName={application.user.firstName}
+                      lastName={application.user.lastName}
+                      imageUrl={application.user.profile?.avatarUrl}
+                      size={36}
+                      clickable
+                    />
                   )}
                   <div>
                     <p className="text-sm font-medium text-[var(--sb-text)]">

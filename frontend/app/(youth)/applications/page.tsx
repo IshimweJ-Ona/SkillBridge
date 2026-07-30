@@ -1,7 +1,7 @@
 "use client";
 
-import { Briefcase } from "lucide-react";
 import { useEffect, useState } from "react";
+import { UndrawResume } from "react-undraw-illustrations";
 import { ApplicationStatusPill } from "@/components/ui/status-pill";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -70,7 +70,7 @@ export default function ApplicationsPage() {
         {loading && Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-20 w-full" />)}
         {!loading && filtered.length === 0 && (
           <EmptyState
-            icon={Briefcase}
+            illustration={UndrawResume}
             title={t("applications.noApplicationsTitle")}
             description={t("applications.noApplicationsDescription")}
             action={<LinkButton href="/jobs" size="sm">{t("applications.findJobs")}</LinkButton>}

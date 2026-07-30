@@ -29,7 +29,7 @@ export class UsersService {
     private readonly passwordService: PasswordService,
   ) {}
 
-  async create(createUserDto: CreateUserDto, actorUuid: string) {
+  async create(createUserDto: CreateUserDto, actorUuid: string, ipAddress?: string) {
     const { password, ...userData } = createUserDto;
     const actor = await this.findActor(actorUuid);
 
@@ -55,7 +55,7 @@ export class UsersService {
       await this.audit(actor.id, AuditAction.CREATE, 'User', user.uuid, {
         role: user.role,
         status: user.status,
-      });
+      }, ipAddress);
 
       return user;
     } catch (error) {
@@ -135,7 +135,7 @@ export class UsersService {
     return user;
   }
 
-  async update(uuid: string, updateUserDto: UpdateUserDto, actorUuid: string) {
+  async update(uuid: string, updateUserDto: UpdateUserDto, actorUuid: string, ipAddress?: string) {
     const existingUser = await this.findOne(uuid);
     const actor = await this.findActor(actorUuid);
     const { password, ...userData } = updateUserDto;
@@ -161,14 +161,14 @@ export class UsersService {
         await this.audit(actor.id, AuditAction.ROLE_CHANGE, 'User', updatedUser.uuid, {
           from: existingUser.role,
           to: updateUserDto.role,
-        });
+        }, ipAddress);
       }
 
       if (updateUserDto.status && updateUserDto.status !== existingUser.status) {
         await this.audit(actor.id, AuditAction.STATUS_CHANGE, 'User', updatedUser.uuid, {
           from: existingUser.status,
           to: updateUserDto.status,
-        });
+        }, ipAddress);
       }
 
       return updatedUser;
@@ -177,7 +177,7 @@ export class UsersService {
     }
   }
 
-  async updateStatus(uuid: string, status: UserStatus, actorUuid: string) {
+  async updateStatus(uuid: string, status: UserStatus, actorUuid: string, ipAddress?: string) {
     const existingUser = await this.findOne(uuid);
     const actor = await this.findActor(actorUuid);
 
@@ -197,13 +197,13 @@ export class UsersService {
       await this.audit(actor.id, AuditAction.STATUS_CHANGE, 'User', updatedUser.uuid, {
         from: existingUser.status,
         to: status,
-      });
+      }, ipAddress);
     }
 
     return updatedUser;
   }
 
-  async remove(uuid: string, actorUuid: string) {
+  async remove(uuid: string, actorUuid: string, ipAddress?: string) {
     const existingUser = await this.findOne(uuid);
     const actor = await this.findActor(actorUuid);
     const now = new Date();
@@ -227,7 +227,7 @@ export class UsersService {
       from: existingUser.status,
       to: UserStatus.DISABLED,
       deletionScheduledAt: deletionScheduledAt.toISOString(),
-    });
+    }, ipAddress);
 
     return updatedUser;
   }
@@ -264,6 +264,7 @@ export class UsersService {
     entityType: string,
     entityUuid: string,
     details: Prisma.InputJsonValue,
+    ipAddress?: string,
   ) {
     await this.prisma.auditLog.create({
       data: {
@@ -272,6 +273,7 @@ export class UsersService {
         entityType,
         entityUuid,
         details,
+        ipAddress,
       },
     });
   }

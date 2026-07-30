@@ -1,7 +1,8 @@
 "use client";
 
-import { BarChart3, Briefcase, ShieldCheck, UserRound } from "lucide-react";
+import { ArrowRight, Briefcase, UserRound } from "@/lib/icons";
 import Link from "next/link";
+import { LOGO_SRC } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { useTranslations } from "@/lib/i18n/context";
 
@@ -25,26 +26,23 @@ export default function WelcomePage() {
       href: "/sign-in?role=employer",
       available: true,
     },
-    {
-      key: "analyst",
-      label: t("welcome.analystLabel"),
-      description: t("welcome.analystDescription"),
-      icon: BarChart3,
-      href: "/sign-in",
-      available: true,
-    },
-    {
-      key: "administrator",
-      label: t("welcome.adminLabel"),
-      description: t("welcome.adminDescription"),
-      icon: ShieldCheck,
-      href: "/sign-in",
-      available: true,
-    },
+    // Analyst/Administrator are intentionally not offered here - those
+    // accounts are staff-created only (see auth.service.ts#signup, which
+    // rejects self-registration for anything but YOUTH_USER/EMPLOYER) and
+    // sign in at the separate, unlisted /ad_an route instead.
   ];
 
   return (
     <div className="sb-fade-in">
+      <div className="mb-6 flex justify-center lg:hidden">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={LOGO_SRC}
+          alt="SkillBridge"
+          className="h-16 w-16 rounded-2xl shadow-[0_4px_20px_-4px_var(--sb-primary-glow)] ring-1 ring-[var(--sb-border-strong)]"
+        />
+      </div>
+
       <h1 className="text-2xl font-bold leading-tight text-[var(--sb-text)]">{t("welcome.missionTitle")}</h1>
       <p className="mt-3 text-sm text-[var(--sb-text-muted)]">{t("welcome.missionBody")}</p>
 
@@ -60,19 +58,23 @@ export default function WelcomePage() {
             href={role.href}
             aria-disabled={!role.available}
             className={cn(
-              "flex items-center gap-3 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-4 transition-colors",
+              "group flex items-center gap-3 rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-4 shadow-[var(--sb-shadow-sm)] transition-all",
               role.available
-                ? "hover:border-[var(--sb-primary)]/60 hover:bg-[var(--sb-bg-panel-hover)]"
+                ? "hover:-translate-y-0.5 hover:border-[var(--sb-primary)]/50 hover:bg-[var(--sb-bg-panel-hover)] hover:shadow-[var(--sb-shadow-md)]"
                 : "pointer-events-none opacity-50",
             )}
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--sb-primary-soft)] text-[var(--sb-primary)]">
-              <role.icon size={18} />
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[0.65rem] bg-[var(--sb-bg-inset)] text-[var(--sb-text)] ring-1 ring-[var(--sb-border-strong)] transition-colors group-hover:bg-[var(--sb-primary-soft)] group-hover:text-[var(--sb-primary)] group-hover:ring-[var(--sb-primary)]/20">
+              <role.icon size={19} />
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-[var(--sb-text)]">{role.label}</p>
               <p className="text-xs text-[var(--sb-text-muted)]">{role.description}</p>
             </div>
+            <ArrowRight
+              size={16}
+              className="shrink-0 text-[var(--sb-text-faint)] transition-transform group-hover:translate-x-0.5 group-hover:text-[var(--sb-primary)]"
+            />
           </Link>
         ))}
       </div>

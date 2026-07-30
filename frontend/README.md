@@ -58,8 +58,8 @@ Analyst and Administrator accounts are invite-only in the real product (no self-
 ```text
 app/(auth)/         welcome, sign-in, sign-up, OTP verify, forgot/reset password
 app/(youth)/         dashboard, jobs, applications, profile, skills & badges,
-                     learning hub, marketplace, wallet, messages (demo-only)
-app/employer/        dashboard, company, job postings, applicants, messages (demo-only)
+                     learning hub, marketplace, connect, messages
+app/employer/        dashboard, company, job postings, skill tests, applicants, messages
 app/analyst/         dashboard, reports, feedback analysis, audit log
 app/admin/           dashboard, users, companies, reports, audit log, settings
 app/oauth-callback/  Google OAuth redirect landing page

@@ -1,8 +1,8 @@
-import { Loader2 } from "lucide-react";
+import { Loader2 } from "@/lib/icons";
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "destructive" | "accent";
 type ButtonSize = "sm" | "md" | "lg";
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -13,11 +13,13 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
 
 const VARIANT_CLASSES: Record<ButtonVariant, string> = {
   primary:
-    "bg-gradient-to-b from-[var(--sb-primary-hover)] to-[var(--sb-primary)] text-[var(--sb-primary-foreground)] shadow-[0_4px_16px_rgba(228,41,63,0.35)] hover:from-[var(--sb-primary-hover)] hover:to-[var(--sb-primary-hover)] active:to-[var(--sb-primary-active)]",
+    "bg-gradient-to-b from-[var(--sb-primary-hover)] to-[var(--sb-primary)] text-[var(--sb-primary-foreground)] shadow-[0_4px_18px_-2px_var(--sb-primary-glow)] hover:from-[var(--sb-primary-hover)] hover:to-[var(--sb-primary-hover)] hover:shadow-[0_6px_22px_-2px_var(--sb-primary-glow)] active:to-[var(--sb-primary-active)] active:scale-[0.98]",
+  accent:
+    "bg-gradient-to-b from-[var(--sb-accent-hover)] to-[var(--sb-accent)] text-[var(--sb-accent-foreground)] shadow-[0_4px_18px_-2px_rgba(230,165,60,0.35)] hover:brightness-105 active:scale-[0.98]",
   secondary:
-    "border border-[var(--sb-border-strong)] bg-transparent text-[var(--sb-text)] hover:bg-[var(--sb-bg-panel-hover)]",
-  ghost: "bg-transparent text-[var(--sb-text-muted)] hover:bg-[var(--sb-bg-panel-hover)] hover:text-[var(--sb-text)]",
-  destructive: "bg-[var(--sb-danger)] text-white hover:brightness-110",
+    "border border-[var(--sb-border-strong)] bg-[var(--sb-bg-panel)] text-[var(--sb-text)] hover:bg-[var(--sb-bg-panel-hover)] hover:border-[var(--sb-text-faint)] active:scale-[0.98]",
+  ghost: "bg-transparent text-[var(--sb-text-muted)] hover:bg-[var(--sb-bg-panel-hover)] hover:text-[var(--sb-text)] active:scale-[0.98]",
+  destructive: "bg-[var(--sb-danger)] text-white shadow-[0_4px_18px_-2px_rgba(240,67,95,0.35)] hover:brightness-110 active:scale-[0.98]",
 };
 
 const SIZE_CLASSES: Record<ButtonSize, string> = {
@@ -28,7 +30,11 @@ const SIZE_CLASSES: Record<ButtonSize, string> = {
 
 export function buttonClasses(variant: ButtonVariant = "primary", size: ButtonSize = "md", className?: string) {
   return cn(
-    "inline-flex items-center justify-center rounded-[var(--sb-radius-sm)] font-medium transition-colors duration-150 disabled:cursor-not-allowed disabled:opacity-50",
+    // shrink-0 + whitespace-nowrap: without these, a button sitting next to
+    // a flexible sibling (e.g. a page title) can get squeezed narrower than
+    // its label needs in a flex row, wrapping "New Listing" onto two lines
+    // instead of the title truncating/wrapping around it.
+    "inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-[var(--sb-radius-sm)] font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-50 disabled:active:scale-100",
     VARIANT_CLASSES[variant],
     SIZE_CLASSES[size],
     className,

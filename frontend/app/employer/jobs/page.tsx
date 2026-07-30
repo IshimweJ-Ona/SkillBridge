@@ -1,8 +1,9 @@
 "use client";
 
-import { Briefcase, MapPin } from "lucide-react";
+import { MapPin } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UndrawJobHunt } from "react-undraw-illustrations";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/link-button";
@@ -36,7 +37,7 @@ export default function EmployerJobsPage() {
         {items === null && Array.from({ length: 3 }, (_, index) => <Skeleton key={index} className="h-20 w-full" />)}
         {items !== null && items.length === 0 && (
           <EmptyState
-            icon={Briefcase}
+            illustration={UndrawJobHunt}
             title={t("employer.jobs.noJobsTitle")}
             description={t("employer.jobs.noJobsDescription")}
             action={<LinkButton href="/employer/jobs/new" size="sm">{t("employer.jobs.postNewJob")}</LinkButton>}

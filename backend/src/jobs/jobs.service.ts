@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import {
   ApplicationStatus,
+  ChallengeStatus,
   CompanyStatus,
   JobStatus,
   Prisma,
@@ -146,17 +147,61 @@ export class JobsService {
       throw new BadRequestException('Company must be verified before posting jobs.');
     }
 
+    // Employer submitted a raw pre-screen test link (Google Form) - this
+    // never goes live directly. It's staged as a DRAFT challenge + DRAFT job
+    // until an admin pastes the real link back from AutoProctor via
+    // approvePreScreen() below, which is what actually publishes both.
+    const pendingFormUrl = this.optionalString(body.preScreenGoogleFormUrl);
+    const responseSheetUrl = this.optionalString(body.responseSheetUrl);
+    let preScreenChallengeId: number | undefined;
+    let forcedDraft = false;
+
+    if (pendingFormUrl) {
+      const title = this.requiredString(body.title, 'title');
+      const pendingChallenge = await this.prisma.skillChallenge.create({
+        data: {
+          companyId: company.id,
+          title: `${title} - Pre-Screening Test`,
+          description: 'Complete the linked test, then submit here to finish this job\'s pre-screening.',
+          sector: 'Professional Skills',
+          skillCategory: this.stringArray(body.requiredSkills)[0] ?? 'General',
+          durationMinutes: 30,
+          passingScore: 70,
+          status: ChallengeStatus.DRAFT,
+          questions: [],
+          resources: [
+            {
+              type: 'pending_autoproctor',
+              label: 'Pending AutoProctor processing',
+              url: pendingFormUrl,
+            },
+            // Applicants' emails/names/scores land here (the employer links
+            // their Google Form's responses to this Sheet) - SkillBridge
+            // never reads it automatically, it's for the employer/admin to
+            // check manually. Omitted entirely if not provided.
+            ...(responseSheetUrl
+              ? [{ type: 'response_sheet', label: 'Applicant responses & scores', url: responseSheetUrl }]
+              : []),
+          ],
+        },
+      });
+      preScreenChallengeId = pendingChallenge.id;
+      forcedDraft = true;
+    } else {
+      preScreenChallengeId = await this.findChallengeId(body.preScreenChallengeUuid);
+    }
+
     const job = await this.prisma.jobPosting.create({
       data: {
         companyId: company.id,
-        preScreenChallengeId: await this.findChallengeId(body.preScreenChallengeUuid),
+        preScreenChallengeId,
         title: this.requiredString(body.title, 'title'),
         description: this.requiredString(body.description, 'description'),
         requiredSkills: this.stringArray(body.requiredSkills),
         compensationRange: this.optionalString(body.compensationRange),
         location: this.optionalString(body.location),
         deadline: this.optionalDate(body.deadline),
-        status: (body.status as JobStatus | undefined) ?? JobStatus.OPEN,
+        status: forcedDraft ? JobStatus.DRAFT : ((body.status as JobStatus | undefined) ?? JobStatus.OPEN),
       },
       include: { company: true, preScreenChallenge: true },
     });
@@ -166,6 +211,68 @@ export class JobsService {
     }
 
     return job;
+  }
+
+  async listPendingPreScreen() {
+    // Prisma's JSON filtering doesn't reliably support partial-object
+    // containment checks across providers, so the DRAFT+has-a-challenge
+    // filter here is deliberately coarse - the real "still pending
+    // AutoProctor" check happens in JS below, where it's unambiguous.
+    const jobs = await this.prisma.jobPosting.findMany({
+      where: { status: JobStatus.DRAFT, preScreenChallengeId: { not: null } },
+      include: { company: true, preScreenChallenge: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    return jobs.filter((job) => {
+      const resources = job.preScreenChallenge?.resources;
+      return Array.isArray(resources) && resources.some((r) => (r as { type?: string })?.type === 'pending_autoproctor');
+    });
+  }
+
+  async approvePreScreen(jobUuid: string, body: Record<string, unknown>) {
+    const autoProctorUrl = this.requiredString(body.autoProctorUrl, 'autoProctorUrl');
+
+    const job = await this.prisma.jobPosting.findUnique({
+      where: { uuid: jobUuid },
+      include: { preScreenChallenge: true },
+    });
+    if (!job) throw new NotFoundException(`Job ${jobUuid} was not found.`);
+    if (!job.preScreenChallenge) {
+      throw new BadRequestException('This job has no pre-screening test pending approval.');
+    }
+
+    // Preserve the response_sheet entry (if the employer provided one) -
+    // only the pending_autoproctor entry gets replaced with the real link.
+    const existingResources = Array.isArray(job.preScreenChallenge.resources)
+      ? (job.preScreenChallenge.resources as Array<{ type?: string }>)
+      : [];
+    const responseSheetResource = existingResources.find((r) => r.type === 'response_sheet');
+
+    await this.prisma.skillChallenge.update({
+      where: { id: job.preScreenChallenge.id },
+      data: {
+        status: ChallengeStatus.PUBLISHED,
+        resources: [
+          {
+            type: 'external_test',
+            label: `Open the ${job.preScreenChallenge.skillCategory} test`,
+            url: autoProctorUrl,
+          },
+          ...(responseSheetResource ? [responseSheetResource] : []),
+        ],
+      },
+    });
+
+    const updatedJob = await this.prisma.jobPosting.update({
+      where: { id: job.id },
+      data: { status: JobStatus.OPEN },
+      include: { company: true, preScreenChallenge: true },
+    });
+
+    await this.rankCandidates(updatedJob.uuid);
+
+    return updatedJob;
   }
 
   async listJobs(query: Record<string, string | undefined>) {
@@ -420,7 +527,7 @@ export class JobsService {
           status: TransactionStatus.PENDING,
           amountCents: this.numberValue(body.amountCents, 1_000_000),
           currency: 'RWF',
-          provider: 'mtn-momo',
+          provider: 'manual',
           metadata: { feeDescription: '10,000 RWF hiring fee invoice' },
         },
       });

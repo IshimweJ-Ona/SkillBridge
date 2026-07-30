@@ -1,8 +1,9 @@
 "use client";
 
-import { Award, Briefcase, Sparkles, TrendingUp } from "lucide-react";
+import { Award, Briefcase, Sparkles, TrendingUp } from "@/lib/icons";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { UndrawEmpty, UndrawTarget } from "react-undraw-illustrations";
 import { LinkButton } from "@/components/ui/link-button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -89,7 +90,7 @@ export default function DashboardPage() {
               {loading && <SkeletonList />}
               {!loading && matches.length === 0 && (
                 <EmptyState
-                  icon={Sparkles}
+                  illustration={UndrawTarget}
                   title={t("youthDashboard.noMatchesTitle")}
                   description={t("youthDashboard.noMatchesDescription")}
                   action={
@@ -111,7 +112,7 @@ export default function DashboardPage() {
             <CardContent>
               {loading && <SkeletonList />}
               {!loading && activity.length === 0 && (
-                <EmptyState icon={TrendingUp} title={t("youthDashboard.noActivityTitle")} description={t("youthDashboard.noActivityDescription")} />
+                <EmptyState illustration={UndrawEmpty} title={t("youthDashboard.noActivityTitle")} description={t("youthDashboard.noActivityDescription")} />
               )}
               {!loading && (
                 <ul className="space-y-3">
@@ -210,14 +211,14 @@ function StatTile({
   suffix?: string;
 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 text-[var(--sb-text-faint)]">
-        <Icon size={14} />
-        <span className="text-xs">{label}</span>
+    <Card className="p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--sb-shadow-md)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[0.55rem] bg-[var(--sb-bg-inset)] text-[var(--sb-text)]">
+        <Icon size={15} />
       </div>
-      <p className="mt-2 text-2xl font-bold text-[var(--sb-text)]">
+      <p className="mt-3 text-2xl font-bold text-[var(--sb-text)]">
         {value === null ? <Skeleton className="h-7 w-10" /> : `${value}${suffix ?? ""}`}
       </p>
+      <p className="mt-0.5 text-xs text-[var(--sb-text-faint)]">{label}</p>
     </Card>
   );
 }

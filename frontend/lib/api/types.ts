@@ -38,6 +38,7 @@ export type NotificationType =
 
 export interface Profile {
   uuid: string;
+  avatarUrl?: string | null;
   headline?: string | null;
   bio?: string | null;
   location?: string | null;
@@ -116,7 +117,7 @@ export interface JobPosting {
   status: JobStatus;
   createdAt: string;
   company: Company;
-  preScreenChallenge?: { uuid: string; title: string } | null;
+  preScreenChallenge?: { uuid: string; title: string; skillCategory?: string; resources?: ChallengeResource[] } | null;
 }
 
 export interface JobMatch {
@@ -156,6 +157,25 @@ export interface Paginated<T> {
   meta: { page: number; limit: number; total: number; totalPages: number };
 }
 
+// A supplementary resource attached to a challenge - currently used to link
+// out to an external test (e.g. a Google Form) that the youth user completes
+// outside the app before submitting their response here.
+export interface ChallengeResource {
+  type: string;
+  label: string;
+  url: string;
+}
+
+// The multiple-choice question shape as seen by a test-taker - the correct
+// answer index is never sent to the client (backend strips it), only used
+// server-side at grading time.
+export interface ChallengeQuestion {
+  id: string;
+  prompt: string;
+  options: string[];
+  points?: number;
+}
+
 export interface SkillChallenge {
   uuid: string;
   title: string;
@@ -167,6 +187,8 @@ export interface SkillChallenge {
   durationMinutes: number;
   passingScore: number;
   status: ChallengeStatus;
+  questions?: ChallengeQuestion[];
+  resources?: ChallengeResource[];
   createdAt: string;
   company?: Company;
 }
@@ -185,9 +207,10 @@ export interface SkillBadge {
 
 export interface ChallengeSubmission {
   uuid: string;
-  status: "IN_PROGRESS" | "SUBMITTED" | "GRADED" | "REVIEW_REQUIRED" | "EXPIRED";
+  status: "IN_PROGRESS" | "SUBMITTED" | "GRADED" | "REVIEW_REQUIRED" | "EXPIRED" | "INTEGRITY_FAILED";
   score?: number | null;
   startedAt: string;
+  lockedUntil?: string | null;
   challenge: SkillChallenge;
 }
 
@@ -281,6 +304,7 @@ export interface AuditLogEntry {
   entityType: string;
   entityUuid?: string | null;
   details: Record<string, unknown>;
+  ipAddress?: string | null;
   createdAt: string;
   actor?: { firstName: string; lastName: string; role: Role } | null;
 }
@@ -328,15 +352,14 @@ export interface AdminUser {
   lastName: string;
   role: Role;
   status: UserStatus;
+  profile?: Profile | null;
   createdAt: string;
 }
 
 export interface IntegrationStatus {
   resendConfigured: boolean;
-  mtnMomoSandboxConfigured: boolean;
   cloudinaryConfigured: boolean;
   emailProvider: string;
-  paymentProvider: string;
   mediaProvider: string;
 }
 
@@ -397,6 +420,65 @@ export interface ServiceContract {
   listing: FreelanceListing;
   transactions?: MarketplaceTransaction[];
   review?: FreelanceReview | null;
+}
+
+// Messaging (backend/src/messaging, served by the messaging-api service).
+export interface MessageParticipant {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  companyName?: string | null;
+}
+
+export interface ChatMessage {
+  uuid: string;
+  threadUuid: string;
+  senderUuid: string;
+  body: string;
+  createdAt: string;
+  readAt?: string | null;
+}
+
+export interface MessageThread {
+  uuid: string;
+  participants: MessageParticipant[];
+  lastMessage: ChatMessage | null;
+  unreadCount: number;
+  updatedAt: string;
+  /** Optional grounding context, e.g. the job this conversation started from. */
+  context?: { jobTitle?: string | null } | null;
+}
+
+// A real person the current user has an actual relationship with (via a job
+// application) and can therefore start a conversation with - never an
+// arbitrary/fabricated contact.
+export interface MessageableContact {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  role: Role;
+  companyName?: string | null;
+  context: string;
+}
+
+// Connect directory (backend/src/connections, served by identity-api) - the
+// fellow-youth network: browse/search PUBLIC-visibility youth profiles,
+// request/accept a connection, or jump into messaging once connected.
+export type ConnectionState = "NONE" | "PENDING_SENT" | "PENDING_RECEIVED" | "ACCEPTED";
+
+export interface PeerCard {
+  uuid: string;
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  headline: string | null;
+  bio: string | null;
+  skills: string[];
+  careerInterests: string[];
+  languages: string[];
+  location: string | null;
+  connectionState: ConnectionState;
 }
 
 export type CloudinarySignature =

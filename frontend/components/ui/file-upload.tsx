@@ -1,9 +1,10 @@
 "use client";
 
-import { Loader2, Paperclip, UploadCloud, X } from "lucide-react";
+import { Loader2, Paperclip, RefreshCw, UploadCloud, X } from "@/lib/icons";
 import { useRef, useState } from "react";
-import { media } from "@/lib/api";
+import { useCloudinaryUpload } from "@/lib/use-cloudinary-upload";
 import { Input } from "./input";
+import { useToast } from "./toast";
 
 interface FileUploadProps {
   label: string;
@@ -16,50 +17,28 @@ interface FileUploadProps {
 
 // Requests a Cloudinary signature from the backend; if credentials are
 // configured there, uploads the file directly to Cloudinary and stores the
-// returned secure_url. If not configured (the case in this environment, and
-// in mock mode - neither has real Cloudinary credentials), falls back to a
-// plain URL text input so the field still works end-to-end either way.
+// returned secure_url (max 2MB - enforced client-side by useCloudinaryUpload
+// before the upload even starts). If not configured (the case in this
+// environment, and in mock mode - neither has real Cloudinary credentials),
+// falls back to a plain URL text input so the field still works end-to-end
+// either way.
 export function FileUpload({ label, value, onChange, folder, accept, hint }: FileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { upload, uploading, error, setError } = useCloudinaryUpload(folder);
   const [manualMode, setManualMode] = useState(false);
+  const { show } = useToast();
 
   const handleFileSelect = async (file: File) => {
-    setError(null);
-    setUploading(true);
     try {
-      const signature = await media.getUploadSignature(folder);
-      if (!signature.configured) {
-        setManualMode(true);
-        setError("File uploads aren't configured in this environment - paste a URL instead.");
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("api_key", signature.apiKey);
-      formData.append("timestamp", String(signature.timestamp));
-      formData.append("signature", signature.signature);
-      formData.append("folder", signature.folder);
-      if (signature.publicId) formData.append("public_id", signature.publicId);
-
-      const response = await fetch(`https://api.cloudinary.com/v1_1/${signature.cloudName}/auto/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      if (!response.ok) {
-        throw new Error(`Upload failed with status ${response.status}.`);
-      }
-
-      const result = (await response.json()) as { secure_url: string };
-      onChange(result.secure_url);
+      const url = await upload(file);
+      onChange(url);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Upload failed. Try pasting a URL instead.");
+      show({
+        variant: "error",
+        title: "Upload failed",
+        description: err instanceof Error ? err.message : undefined,
+      });
       setManualMode(true);
-    } finally {
-      setUploading(false);
     }
   };
 
@@ -92,10 +71,27 @@ export function FileUpload({ label, value, onChange, folder, accept, hint }: Fil
       <label className="text-xs font-medium text-[var(--sb-text-muted)]">{label}</label>
       <div className="mt-1.5 flex items-center gap-2">
         {value ? (
-          <div className="flex h-10 flex-1 items-center gap-2 rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 text-xs text-[var(--sb-text)]">
+          // min-w-0 is required for `truncate` to actually clip inside a flex
+          // item - without it, flex items refuse to shrink below their
+          // content's intrinsic width and the URL overflows the box.
+          <div className="flex h-10 min-w-0 flex-1 items-center gap-2 rounded-[var(--sb-radius-sm)] border border-[var(--sb-border)] bg-[var(--sb-bg-inset)] px-3 text-xs text-[var(--sb-text)]">
             <Paperclip size={13} className="shrink-0 text-[var(--sb-text-faint)]" />
-            <span className="truncate">{value}</span>
-            <button type="button" onClick={() => onChange("")} className="ml-auto shrink-0 text-[var(--sb-text-faint)] hover:text-[var(--sb-danger)]">
+            <span className="min-w-0 flex-1 truncate">{value}</span>
+            <button
+              type="button"
+              onClick={() => inputRef.current?.click()}
+              disabled={uploading}
+              title="Replace file"
+              className="shrink-0 text-[var(--sb-text-faint)] hover:text-[var(--sb-primary)] disabled:opacity-50"
+            >
+              {uploading ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => onChange("")}
+              title="Remove file"
+              className="shrink-0 text-[var(--sb-text-faint)] hover:text-[var(--sb-danger)]"
+            >
               <X size={13} />
             </button>
           </div>
@@ -122,7 +118,8 @@ export function FileUpload({ label, value, onChange, folder, accept, hint }: Fil
           }}
         />
       </div>
-      {hint && <p className="mt-1 text-[10px] text-[var(--sb-text-faint)]">{hint}</p>}
+      {(error || hint) && <p className="mt-1 text-[10px] text-[var(--sb-text-faint)]">{error ?? hint}</p>}
+      <p className="mt-1 text-[10px] text-[var(--sb-text-faint)]">Max file size: 2MB.</p>
       <button
         type="button"
         onClick={() => setManualMode(true)}

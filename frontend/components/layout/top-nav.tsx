@@ -1,6 +1,6 @@
 "use client";
 
-import { Menu } from "lucide-react";
+import { Menu } from "@/lib/icons";
 import Link from "next/link";
 import { useState } from "react";
 import { Avatar } from "@/components/ui/avatar";
@@ -19,7 +19,7 @@ export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
   if (!user) return null;
 
   return (
-    <header className="sb-print-hide sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between border-b border-[var(--sb-border)] bg-[var(--sb-bg-panel)]/95 px-4 backdrop-blur">
+    <header className="sb-print-hide sticky top-0 z-20 flex h-16 shrink-0 items-center justify-between border-b border-[var(--sb-border)] bg-[var(--sb-bg-panel)]/80 px-4 backdrop-blur-md">
       <div className="flex items-center gap-3">
         <button
           type="button"
@@ -39,13 +39,13 @@ export function TopNav({ onMenuClick }: { onMenuClick: () => void }) {
             onClick={() => setMenuOpen((prev) => !prev)}
             className="flex items-center gap-2 rounded-[var(--sb-radius-sm)] p-1 pr-2 hover:bg-[var(--sb-bg-panel-hover)]"
           >
-            <Avatar firstName={user.firstName} lastName={user.lastName} size={30} />
+            <Avatar firstName={user.firstName} lastName={user.lastName} imageUrl={user.profile?.avatarUrl} size={30} />
             <span className="hidden text-sm font-medium sm:inline">{user.firstName}</span>
           </button>
           {menuOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-              <div className="sb-fade-in absolute right-0 z-20 mt-2 w-48 overflow-hidden rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] py-1 shadow-xl shadow-black/40">
+              <div className="sb-fade-in absolute right-0 z-20 mt-2 w-52 overflow-hidden rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-elevated)] py-1 shadow-[var(--sb-shadow-lg)]">
                 {user.role === "YOUTH_USER" && (
                   <>
                     <Link

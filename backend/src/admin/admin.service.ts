@@ -83,7 +83,7 @@ export class AdminService {
     };
   }
 
-  async createReport(userUuid: string, body: Record<string, unknown>) {
+  async createReport(userUuid: string, body: Record<string, unknown>, ipAddress?: string) {
     const user = await this.prisma.user.findUnique({
       where: { uuid: userUuid },
       select: { id: true },
@@ -104,7 +104,7 @@ export class AdminService {
 
     await this.audit(user.id, AuditAction.EXPORT, 'ReportExport', report.uuid, {
       type: report.type,
-    });
+    }, ipAddress);
 
     return report;
   }
@@ -182,6 +182,7 @@ export class AdminService {
     entityType: string,
     entityUuid: string,
     details: Prisma.InputJsonValue,
+    ipAddress?: string,
   ) {
     await this.prisma.auditLog.create({
       data: {
@@ -190,6 +191,7 @@ export class AdminService {
         entityType,
         entityUuid,
         details,
+        ipAddress,
       },
     });
   }

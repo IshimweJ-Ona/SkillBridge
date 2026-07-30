@@ -96,7 +96,7 @@ function VerifyOtpForm() {
   };
 
   return (
-    <div className="sb-fade-in rounded-[var(--sb-radius-lg)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-6 text-center">
+    <div className="sb-fade-in rounded-[var(--sb-radius-lg)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-6 shadow-[var(--sb-shadow-md)] text-center">
       <h2 className="text-lg font-semibold">{t("auth.otp.title")}</h2>
       <p className="mt-1 text-sm text-[var(--sb-text-muted)]">
         {t("auth.otp.subtitle")}

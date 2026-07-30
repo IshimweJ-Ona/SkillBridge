@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, CheckCheck } from "lucide-react";
+import { Bell, CheckCheck } from "@/lib/icons";
 import { useCallback, useEffect, useState } from "react";
 import { notifications, type AppNotification } from "@/lib/api";
 import { formatRelativeTime } from "@/lib/utils";
@@ -68,7 +68,7 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="sb-fade-in absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] shadow-xl shadow-black/40">
+          <div className="sb-fade-in absolute right-0 z-20 mt-2 w-80 overflow-hidden rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] bg-[var(--sb-bg-elevated)] shadow-[var(--sb-shadow-lg)]">
             <div className="flex items-center justify-between border-b border-[var(--sb-border)] px-3.5 py-2.5">
               <p className="text-sm font-semibold">{t("topnav.notifications")}</p>
               <button

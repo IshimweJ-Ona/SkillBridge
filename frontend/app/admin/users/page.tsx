@@ -1,7 +1,8 @@
 "use client";
 
-import { Search, Users as UsersIcon } from "lucide-react";
+import { Search } from "@/lib/icons";
 import { useEffect, useState } from "react";
+import { UndrawTeam } from "react-undraw-illustrations";
 import { Avatar } from "@/components/ui/avatar";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -63,13 +64,19 @@ export default function AdminUsersPage() {
       <div className="space-y-2">
         {items === null && Array.from({ length: 4 }, (_, index) => <Skeleton key={index} className="h-16 w-full" />)}
         {items !== null && items.length === 0 && (
-          <EmptyState icon={UsersIcon} title={t("admin.users.noUsersTitle")} description={t("admin.users.noUsersDescription")} />
+          <EmptyState illustration={UndrawTeam} title={t("admin.users.noUsersTitle")} description={t("admin.users.noUsersDescription")} />
         )}
         {items !== null &&
           items.map((user) => (
             <Card key={user.uuid} className="flex flex-wrap items-center justify-between gap-3 p-3.5">
               <div className="flex items-center gap-3">
-                <Avatar firstName={user.firstName} lastName={user.lastName} size={34} />
+                <Avatar
+                  firstName={user.firstName}
+                  lastName={user.lastName}
+                  imageUrl={user.profile?.avatarUrl}
+                  size={34}
+                  clickable
+                />
                 <div>
                   <p className="text-sm font-medium text-[var(--sb-text)]">
                     {user.firstName} {user.lastName}

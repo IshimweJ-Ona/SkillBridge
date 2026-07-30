@@ -6,6 +6,7 @@ import {
   type JobPosting,
   type JobStatus,
   type Paginated,
+  type SkillChallenge,
 } from "../types";
 import { requireSession } from "./helpers";
 import { getDb, mockLatency, saveDb } from "./store";
@@ -16,6 +17,9 @@ export const jobsApiMock = {
     const db = getDb();
     const search = query?.search?.toLowerCase().trim();
     const items = db.jobs.filter((job) => {
+      // Matches the real backend's listJobs default: DRAFT jobs (e.g. a
+      // pending pre-screen test awaiting admin approval) never show up here.
+      if (job.status !== "OPEN") return false;
       if (!search) return true;
       return (
         job.title.toLowerCase().includes(search) ||
@@ -134,6 +138,9 @@ export const jobsApiMock = {
       location?: string;
       deadline?: string;
       status?: JobStatus;
+      preScreenChallengeUuid?: string;
+      preScreenGoogleFormUrl?: string;
+      responseSheetUrl?: string;
     },
   ): Promise<JobPosting> {
     await mockLatency();
@@ -148,6 +155,39 @@ export const jobsApiMock = {
       throw new ApiError("Company must be verified before posting jobs.", 400);
     }
 
+    let preScreenChallenge: SkillChallenge | undefined;
+    let status = body.status ?? "OPEN";
+
+    if (body.preScreenGoogleFormUrl) {
+      // Mirrors jobs.service.ts#createJob: a raw employer-submitted link
+      // never goes live directly - staged as DRAFT until admin approves it
+      // with the real AutoProctor link via approvePreScreen() below.
+      preScreenChallenge = {
+        uuid: crypto.randomUUID(),
+        title: `${body.title} - Pre-Screening Test`,
+        description: "Complete the linked test, then submit here to finish this job's pre-screening.",
+        sector: "Professional Skills",
+        skillCategory: body.requiredSkills?.[0] ?? "General",
+        difficulty: "BEGINNER",
+        audience: "ALL_YOUTH",
+        durationMinutes: 30,
+        passingScore: 70,
+        status: "DRAFT",
+        resources: [
+          { type: "pending_autoproctor", label: "Pending AutoProctor processing", url: body.preScreenGoogleFormUrl },
+          ...(body.responseSheetUrl
+            ? [{ type: "response_sheet", label: "Applicant responses & scores", url: body.responseSheetUrl }]
+            : []),
+        ],
+        createdAt: new Date().toISOString(),
+        company,
+      };
+      db.challenges.unshift(preScreenChallenge);
+      status = "DRAFT";
+    } else if (body.preScreenChallengeUuid) {
+      preScreenChallenge = db.challenges.find((candidate) => candidate.uuid === body.preScreenChallengeUuid);
+    }
+
     const job: JobPosting = {
       uuid: crypto.randomUUID(),
       title: body.title,
@@ -156,13 +196,56 @@ export const jobsApiMock = {
       compensationRange: body.compensationRange ?? null,
       location: body.location ?? null,
       deadline: body.deadline ?? null,
-      status: body.status ?? "OPEN",
+      status,
       createdAt: new Date().toISOString(),
       company,
-      preScreenChallenge: null,
+      preScreenChallenge: preScreenChallenge
+        ? {
+            uuid: preScreenChallenge.uuid,
+            title: preScreenChallenge.title,
+            skillCategory: preScreenChallenge.skillCategory,
+            resources: preScreenChallenge.resources,
+          }
+        : null,
     };
 
     db.jobs.unshift(job);
+    saveDb(db);
+    return job;
+  },
+
+  // Admin-only below.
+  async listPendingPreScreen(): Promise<JobPosting[]> {
+    await mockLatency();
+    const db = getDb();
+    return db.jobs.filter(
+      (job) =>
+        job.status === "DRAFT" &&
+        job.preScreenChallenge?.resources?.some((resource) => resource.type === "pending_autoproctor"),
+    );
+  },
+
+  async approvePreScreen(uuid: string, autoProctorUrl: string): Promise<JobPosting> {
+    await mockLatency();
+    const db = getDb();
+    const job = db.jobs.find((candidate) => candidate.uuid === uuid);
+    if (!job) throw new ApiError(`Job ${uuid} was not found.`, 404);
+    if (!job.preScreenChallenge) {
+      throw new ApiError("This job has no pre-screening test pending approval.", 400);
+    }
+
+    const challenge = db.challenges.find((candidate) => candidate.uuid === job.preScreenChallenge!.uuid);
+    if (challenge) {
+      const responseSheet = challenge.resources?.find((r) => r.type === "response_sheet");
+      challenge.status = "PUBLISHED";
+      challenge.resources = [
+        { type: "external_test", label: `Open the ${challenge.skillCategory} test`, url: autoProctorUrl },
+        ...(responseSheet ? [responseSheet] : []),
+      ];
+      job.preScreenChallenge.resources = challenge.resources;
+    }
+
+    job.status = "OPEN";
     saveDb(db);
     return job;
   },

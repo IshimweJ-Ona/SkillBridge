@@ -1,6 +1,6 @@
 "use client";
 
-import { Award, Briefcase, TrendingUp, Users } from "lucide-react";
+import { Award, Briefcase, TrendingUp, Users } from "@/lib/icons";
 import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -122,14 +122,14 @@ function StatTile({
   suffix?: string;
 }) {
   return (
-    <Card className="p-4">
-      <div className="flex items-center gap-2 text-[var(--sb-text-faint)]">
-        <Icon size={14} />
-        <span className="text-xs">{label}</span>
+    <Card className="p-4 transition-all hover:-translate-y-0.5 hover:shadow-[var(--sb-shadow-md)]">
+      <div className="flex h-8 w-8 items-center justify-center rounded-[0.55rem] bg-[var(--sb-bg-inset)] text-[var(--sb-text)]">
+        <Icon size={15} />
       </div>
-      <p className="mt-2 text-2xl font-bold text-[var(--sb-text)]">
+      <p className="mt-3 text-2xl font-bold text-[var(--sb-text)]">
         {value === null || value === undefined ? <Skeleton className="h-7 w-10" /> : `${value}${suffix ?? ""}`}
       </p>
+      <p className="mt-0.5 text-xs text-[var(--sb-text-faint)]">{label}</p>
     </Card>
   );
 }

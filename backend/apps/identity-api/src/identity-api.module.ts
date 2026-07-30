@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from '../../../src/auth/auth.module';
+import { ConnectionsModule } from '../../../src/connections/connections.module';
 import { FeedbackModule } from '../../../src/feedback/feedback.module';
 import { HealthModule } from '../../../src/health/health.module';
 import { ProfilesModule } from '../../../src/profiles/profiles.module';
@@ -15,6 +16,7 @@ import { UsersModule } from '../../../src/users/users.module';
     AuthModule,
     UsersModule,
     ProfilesModule,
+    ConnectionsModule,
     SubscriptionsModule,
     FeedbackModule,
     HealthModule,

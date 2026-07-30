@@ -29,7 +29,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="sb-fade-in rounded-[var(--sb-radius-lg)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-6">
+    <div className="sb-fade-in rounded-[var(--sb-radius-lg)] border border-[var(--sb-border)] bg-[var(--sb-bg-panel)] p-6 shadow-[var(--sb-shadow-md)]">
       <h2 className="text-lg font-semibold">{t("auth.forgotPassword.title")}</h2>
       <p className="mt-1 text-sm text-[var(--sb-text-muted)]">{t("auth.forgotPassword.subtitle")}</p>
 

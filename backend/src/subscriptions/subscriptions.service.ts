@@ -150,7 +150,7 @@ export class SubscriptionsService {
         ? updateSubscriptionDto
         : {
             plan: updateSubscriptionDto.plan,
-            provider: 'mtn-momo',
+            provider: 'manual',
             status: SubscriptionStatus.ACTIVE,
             priceCents:
               updateSubscriptionDto.plan === SubscriptionPlan.EMPLOYER_PARTNER
@@ -171,7 +171,7 @@ export class SubscriptionsService {
         priceCents: data.priceCents ?? 0,
         currency: data.currency ?? 'RWF',
         cancelAtPeriodEnd: data.cancelAtPeriodEnd ?? false,
-        provider: data.provider ?? 'mtn-momo',
+        provider: data.provider ?? 'manual',
         providerCustomerId: data.providerCustomerId,
         providerReference: data.providerReference,
       },

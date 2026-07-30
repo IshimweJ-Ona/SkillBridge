@@ -1,0 +1,53 @@
+# Production Dockerfile - deploy counterpart to ./Dockerfile (which stays
+# focused on local `docker-compose.yml` use). Same multi-stage build, plus:
+#   - runs as the non-root "node" user instead of root
+#   - dumb-init as PID 1 so SIGTERM reaches the Node process cleanly on
+#     `docker stop` / rolling restarts, instead of Node ignoring it as PID 1
+#   - a container HEALTHCHECK against this service's own /api/v1/health
+#     endpoint (see src/health/health.controller.ts), so `docker ps` and
+#     `depends_on: condition: service_healthy` in docker-compose.prod.yml
+#     reflect real DB connectivity, not just "process is running"
+FROM node:20-alpine AS deps
+
+WORKDIR /app
+
+COPY package*.json ./
+RUN npm ci --fetch-retries=5 --fetch-retry-mintimeout=20000 --fetch-retry-maxtimeout=120000
+
+FROM deps AS build
+
+COPY tsconfig*.json nest-cli.json ./
+COPY prisma ./prisma
+COPY src ./src
+COPY apps ./apps
+RUN npm run prisma:generate
+RUN npm run build
+
+FROM build AS prod-deps
+
+RUN npm prune --omit=dev
+
+FROM node:20-alpine AS runner
+
+RUN apk add --no-cache dumb-init
+
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY --from=build /app/package*.json ./
+COPY --from=prod-deps /app/node_modules ./node_modules
+COPY --from=build /app/prisma ./prisma
+COPY --from=build /app/dist ./dist
+
+# node:20-alpine already ships an unprivileged "node" user (uid 1000)
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 3101 3102 3103 3104 3105 3106
+
+# PORT is set per-service in docker-compose.prod.yml (3101-3105)
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget --quiet --spider "http://127.0.0.1:${PORT:-3101}/api/v1/health" || exit 1
+
+ENTRYPOINT ["dumb-init", "--"]
+CMD ["node", "dist/apps/identity-api/src/main.js"]

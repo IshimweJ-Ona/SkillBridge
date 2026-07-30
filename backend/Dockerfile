@@ -28,6 +28,6 @@ COPY --from=prod-deps /app/node_modules ./node_modules
 COPY --from=build /app/prisma ./prisma
 COPY --from=build /app/dist ./dist
 
-EXPOSE 3101 3102 3103 3104 3105
+EXPOSE 3101 3102 3103 3104 3105 3106
 
 CMD ["node", "dist/apps/identity-api/src/main.js"]

@@ -2,23 +2,27 @@ import { cn } from "@/lib/utils";
 
 type Tone = "success" | "warning" | "danger" | "info" | "neutral";
 
-const TONE_CLASSES: Record<Tone, string> = {
-  success: "bg-[var(--sb-success-soft)] text-[var(--sb-success)]",
-  warning: "bg-[var(--sb-warning-soft)] text-[var(--sb-warning)]",
-  danger: "bg-[var(--sb-danger-soft)] text-[var(--sb-danger)]",
-  info: "bg-[var(--sb-info-soft)] text-[var(--sb-info)]",
-  neutral: "bg-white/5 text-[var(--sb-text-muted)]",
+// A neutral pill + a small colored dot, rather than a solid pastel-fill
+// badge - the fill-badge look is the single most common "generic AI/template
+// UI" tell. The dot still carries the color meaning; the pill itself stays
+// on-brand (matches every other neutral surface in the app).
+const DOT_CLASSES: Record<Tone, string> = {
+  success: "bg-[var(--sb-success)]",
+  warning: "bg-[var(--sb-warning)]",
+  danger: "bg-[var(--sb-danger)]",
+  info: "bg-[var(--sb-info)]",
+  neutral: "bg-[var(--sb-text-faint)]",
 };
 
 export function StatusPill({ tone = "neutral", children, className }: { tone?: Tone; children: React.ReactNode; className?: string }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium",
-        TONE_CLASSES[tone],
+        "inline-flex items-center gap-1.5 rounded-full bg-[var(--sb-bg-inset)] px-2.5 py-1 text-[11px] font-medium text-[var(--sb-text-muted)] ring-1 ring-inset ring-[var(--sb-border)]",
         className,
       )}
     >
+      <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", DOT_CLASSES[tone])} />
       {children}
     </span>
   );

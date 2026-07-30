@@ -67,10 +67,31 @@ export class JobsController {
     return this.jobsService.myJobs(user.sub);
   }
 
+  // Also a literal-segment route that must be registered before jobs/:uuid,
+  // same reasoning as matches/me and mine above.
+  @Roles(Role.ADMINISTRATOR)
+  @Get('jobs/pending-pre-screen')
+  listPendingPreScreen() {
+    return this.jobsService.listPendingPreScreen();
+  }
+
   @Public()
   @Get('jobs/:uuid')
   findJob(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
     return this.jobsService.findJob(uuid);
+  }
+
+  // Admin approves a pending job's pre-screen test after pasting the real
+  // link back from AutoProctor - flips the job (and its challenge) live and
+  // triggers candidate matching. Admin's submission is final; the employer
+  // never re-reviews the AutoProctor link.
+  @Roles(Role.ADMINISTRATOR)
+  @Patch('jobs/:uuid/approve-pre-screen')
+  approvePreScreen(
+    @Param('uuid', new ParseUUIDPipe()) uuid: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.jobsService.approvePreScreen(uuid, body);
   }
 
   @Roles(Role.EMPLOYER, Role.ADMINISTRATOR)

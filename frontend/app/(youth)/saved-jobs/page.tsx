@@ -1,7 +1,7 @@
 "use client";
 
-import { Bookmark } from "lucide-react";
 import { useEffect, useState } from "react";
+import { UndrawJobHunt } from "react-undraw-illustrations";
 import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/link-button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -42,7 +42,7 @@ export default function SavedJobsPage() {
         {loading && Array.from({ length: 2 }, (_, index) => <Skeleton key={index} className="h-24 w-full" />)}
         {!loading && items.length === 0 && (
           <EmptyState
-            icon={Bookmark}
+            illustration={UndrawJobHunt}
             title={t("savedJobs.noSavedTitle")}
             description={t("savedJobs.noSavedDescription")}
             action={<LinkButton href="/jobs" size="sm">{t("savedJobs.browseJobs")}</LinkButton>}

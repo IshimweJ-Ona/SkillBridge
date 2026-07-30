@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, Loader2 } from "lucide-react";
+import { Building2, Loader2 } from "@/lib/icons";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,10 @@ export default function NewJobPage() {
   const [location, setLocation] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  const [hasPreScreen, setHasPreScreen] = useState(false);
+  const [preScreenFormUrl, setPreScreenFormUrl] = useState("");
+  const [responseSheetUrl, setResponseSheetUrl] = useState("");
+
   useEffect(() => {
     companies.mine().then((result) => {
       setMyCompanies(result);
@@ -44,8 +48,16 @@ export default function NewJobPage() {
         requiredSkills,
         compensationRange: compensationRange || undefined,
         location: location || undefined,
+        preScreenGoogleFormUrl: hasPreScreen ? preScreenFormUrl : undefined,
+        responseSheetUrl: hasPreScreen ? responseSheetUrl || undefined : undefined,
       });
-      show({ variant: "success", title: t("employer.jobs.postSuccess"), description: t("employer.jobs.postSuccessDescription") });
+      show({
+        variant: "success",
+        title: hasPreScreen ? t("employer.jobs.postPendingReviewTitle") : t("employer.jobs.postSuccess"),
+        description: hasPreScreen
+          ? t("employer.jobs.postPendingReviewDescription")
+          : t("employer.jobs.postSuccessDescription"),
+      });
       router.push("/employer/jobs");
     } catch (err) {
       show({
@@ -155,6 +167,40 @@ export default function NewJobPage() {
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
+
+            <div className="rounded-[var(--sb-radius-md)] border border-[var(--sb-border)] p-4">
+              <label className="flex items-center gap-2 text-sm font-medium text-[var(--sb-text)]">
+                <input
+                  type="checkbox"
+                  checked={hasPreScreen}
+                  onChange={(e) => setHasPreScreen(e.target.checked)}
+                  className="h-4 w-4 rounded border-[var(--sb-border)]"
+                />
+                {t("employer.jobs.preScreenToggle")}
+              </label>
+              <p className="mt-1 text-xs text-[var(--sb-text-muted)]">{t("employer.jobs.preScreenHint")}</p>
+
+              {hasPreScreen && (
+                <div className="mt-4 space-y-3">
+                  <Input
+                    label={t("employer.jobs.preScreenFormUrlLabel")}
+                    placeholder="https://forms.gle/..."
+                    value={preScreenFormUrl}
+                    onChange={(e) => setPreScreenFormUrl(e.target.value)}
+                    required={hasPreScreen}
+                    hint={t("employer.jobs.preScreenReviewHint")}
+                  />
+                  <Input
+                    label={t("employer.jobs.responseSheetLabel")}
+                    placeholder="https://docs.google.com/spreadsheets/..."
+                    value={responseSheetUrl}
+                    onChange={(e) => setResponseSheetUrl(e.target.value)}
+                    hint={t("employer.jobs.responseSheetHint")}
+                  />
+                </div>
+              )}
+            </div>
+
             <Button type="submit" loading={submitting}>
               {t("employer.jobs.postJob")}
             </Button>

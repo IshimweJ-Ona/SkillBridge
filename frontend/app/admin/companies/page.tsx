@@ -1,6 +1,6 @@
 "use client";
 
-import { Building2, CheckCircle2 } from "lucide-react";
+import { Building2, CheckCircle2 } from "@/lib/icons";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
