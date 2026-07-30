@@ -9,7 +9,7 @@ import * as bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 const ADMINS: { email: string; password: string; firstName: string; lastName: string }[] = [
-  // { email: 'name@example.com', password: 'ChangeMe@123', firstName: 'First', lastName: 'Last' },
+  // { email: '', password: '', firstName: '', lastName: '' },
 ];
 
 async function main() {
